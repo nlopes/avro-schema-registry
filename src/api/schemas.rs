@@ -1,8 +1,9 @@
 use actix_web::{AsyncResponder, FutureResponse, HttpResponse, Path, State};
-use futures::future::Future;
+use futures::future::{result, Future};
 
+use crate::api::errors::{ApiError, ApiErrorCode};
 use crate::db::models::{DeleteSchemaVersion, GetSchema};
-use crate::AppState;
+use crate::{AppState, Limit};
 
 pub fn get_schema(id: Path<i64>, state: State<AppState>) -> FutureResponse<HttpResponse> {
     info!("method=get,id={}", id);
@@ -25,6 +26,16 @@ pub fn delete_schema_version(
     state: State<AppState>,
 ) -> FutureResponse<HttpResponse> {
     let q = info.into_inner();
+
+    match q.1.within_limits() {
+        false => {
+            return result(Ok(
+                ApiError::new(ApiErrorCode::InvalidVersion).http_response()
+            ))
+            .responder();
+        }
+        _ => (),
+    }
 
     state
         .db

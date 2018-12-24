@@ -1,11 +1,12 @@
+use crate::api::errors::{ApiError, ApiErrorCode};
 use crate::db::models::{
     DeleteSubject, GetSubjectVersion, GetSubjectVersions, GetSubjects, RegisterSchema,
     SchemaResponse, VerifySchemaRegistration,
 };
-use crate::AppState;
+use crate::{AppState, Limit};
 
 use actix_web::{AsyncResponder, FutureResponse, HttpRequest, HttpResponse, Json, Path, State};
-use futures::future::Future;
+use futures::future::{result, Future};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SchemaBody {
@@ -75,6 +76,16 @@ pub fn get_subject_version(
 ) -> FutureResponse<HttpResponse> {
     let q = info.into_inner();
 
+    match q.1.within_limits() {
+        false => {
+            return result(Ok(
+                ApiError::new(ApiErrorCode::InvalidVersion).http_response()
+            ))
+            .responder();
+        }
+        _ => (),
+    }
+
     state
         .db
         .send(GetSubjectVersion {
@@ -114,6 +125,16 @@ pub fn get_subject_version_schema(
     state: State<AppState>,
 ) -> FutureResponse<HttpResponse> {
     let q = info.into_inner();
+
+    match q.1.within_limits() {
+        false => {
+            return result(Ok(
+                ApiError::new(ApiErrorCode::InvalidVersion).http_response()
+            ))
+            .responder();
+        }
+        _ => (),
+    }
 
     state
         .db

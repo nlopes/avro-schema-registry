@@ -28,6 +28,16 @@ pub struct AppState {
     db: Addr<db::ConnectionPooler>,
 }
 
+trait Limit {
+    fn within_limits(&self) -> bool;
+}
+
+impl Limit for u32 {
+    fn within_limits(&self) -> bool {
+        *self > 0 && *self < 2_147_483_648
+    }
+}
+
 fn main() -> Result<(), Box<Error>> {
     env::set_var("RUST_LOG", "actix_web=debug,avro_schema_registry=debug");
     env::set_var("RUST_BACKTRACE", "1");
@@ -72,6 +82,7 @@ fn main() -> Result<(), Box<Error>> {
             })
             .resource("/subjects/{subject}/versions/latest", |r| {
                 r.get().with(api::get_subject_version_latest)
+                // TODO: r.delete().with(api::delete_schema_version_latest)
             })
             .resource("/subjects/{subject}/versions/{version}", |r| {
                 r.get().with(api::get_subject_version);
