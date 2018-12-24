@@ -74,7 +74,8 @@ fn main() -> Result<(), Box<Error>> {
                 r.get().with(api::get_subject_version_latest)
             })
             .resource("/subjects/{subject}/versions/{version}", |r| {
-                r.get().with(api::get_subject_version)
+                r.get().with(api::get_subject_version);
+                r.delete().with(api::delete_schema_version)
             })
             .resource("/subjects/{subject}/versions/latest/schema", |r| {
                 r.get().with(api::get_subject_version_latest_schema)
