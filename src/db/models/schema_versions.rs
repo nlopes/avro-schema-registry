@@ -1,8 +1,10 @@
+use diesel::prelude::*;
+
 use super::schema::*;
 use super::schemas::Schema;
 use super::subjects::Subject;
 
-use diesel::prelude::*;
+use crate::api::errors::{ApiError, ApiErrorCode};
 
 #[derive(Debug, Identifiable, Associations, Queryable)]
 #[table_name = "schema_versions"]
@@ -26,6 +28,79 @@ impl SchemaVersion {
             subject_id: subject_id,
             schema_id: schema_id,
         }
+    }
+
+    pub fn get_schema_id_from_latest(
+        subject_name: String,
+        conn: &PgConnection,
+    ) -> Result<(i64, i32, String), ApiError> {
+        use super::schema::schema_versions::dsl::{
+            schema_id, schema_versions, subject_id, version,
+        };
+        use super::schema::schemas::dsl::{json, schemas};
+
+        conn.transaction::<_, ApiError, _>(|| {
+            let subject = Subject::get_by_name(subject_name, conn)?;
+
+            let (schema_version, schema_id_result): (Option<i32>, i64) = match schema_versions
+                .filter(subject_id.eq(subject.id))
+                .order(version.desc())
+                .select((version, schema_id))
+                .first(conn)
+            {
+                Err(diesel::result::Error::NotFound) => {
+                    Err(ApiError::new(ApiErrorCode::VersionNotFound))
+                }
+                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Ok(o) => Ok(o),
+            }?;
+
+            let schema_json = match schemas.find(schema_id_result).select(json).first(conn) {
+                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Ok(o) => Ok(o),
+            }?;
+
+            Ok((
+                schema_id_result,
+                schema_version.ok_or_else(|| ApiError::new(ApiErrorCode::VersionNotFound))?,
+                schema_json,
+            ))
+        })
+    }
+
+    pub fn get_schema_id(
+        subject_name: String,
+        schema_version: i32,
+        conn: &PgConnection,
+    ) -> Result<(i64, i32, String), ApiError> {
+        use super::schema::schema_versions::dsl::{
+            schema_id, schema_versions, subject_id, version,
+        };
+        use super::schema::schemas::dsl::{json, schemas};
+
+        conn.transaction::<_, ApiError, _>(|| {
+            let subject = Subject::get_by_name(subject_name, conn)?;
+
+            let schema_id_result = match schema_versions
+                .filter(subject_id.eq(subject.id))
+                .filter(version.eq(Some(schema_version)))
+                .select(schema_id)
+                .first(conn)
+            {
+                Err(diesel::result::Error::NotFound) => {
+                    Err(ApiError::new(ApiErrorCode::VersionNotFound))
+                }
+                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Ok(o) => Ok(o),
+            }?;
+
+            let schema_json = match schemas.find(schema_id_result).select(json).first(conn) {
+                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Ok(o) => Ok(o),
+            }?;
+
+            Ok((schema_id_result, schema_version as i32, schema_json))
+        })
     }
 
     pub fn delete_subject_with_name(
@@ -61,6 +136,7 @@ impl SchemaVersion {
     }
 
     fn delete(&self, conn: &PgConnection) -> Result<(), diesel::result::Error> {
+        use super::schema::configs::dsl::{configs, subject_id};
         use super::schema::schema_versions::dsl::{id, schema_versions};
         use super::schema::schemas::dsl::{id as schemas_id, schemas};
         use super::schema::subjects::dsl::{id as subjects_id, subjects};
@@ -69,10 +145,12 @@ impl SchemaVersion {
             let schemas_delete = schemas.filter(schemas_id.eq(self.schema_id));
             let subjects_delete = subjects.filter(subjects_id.eq(self.subject_id));
             let schema_versions_delete = schema_versions.filter(id.eq(self.id));
+            let configs_delete = configs.filter(subject_id.eq(self.subject_id));
 
             diesel::delete(schemas_delete).execute(conn)?;
             diesel::delete(subjects_delete).execute(conn)?;
             diesel::delete(schema_versions_delete).execute(conn)?;
+            diesel::delete(configs_delete).execute(conn)?;
 
             Ok(())
         })

@@ -45,7 +45,7 @@ enum_number!(ApiErrorCode {
 });
 
 impl ApiErrorCode {
-    pub fn message(&self) -> String {
+    pub fn message(&self) -> &str {
         match self {
             ApiErrorCode::SubjectNotFound => "Subject not found",
             ApiErrorCode::VersionNotFound => "Version not found",
@@ -61,7 +61,12 @@ impl ApiErrorCode {
                 "Error while forwarding the request to the master"
             }
         }
-        .to_string()
+    }
+}
+
+impl std::fmt::Display for ApiErrorCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", &self.message())
     }
 }
 
@@ -115,7 +120,7 @@ impl ApiError {
                 message: if let Some(extra) = message {
                     format!("{}: {}", error_code.message(), extra)
                 } else {
-                    error_code.message()
+                    error_code.message().to_string()
                 },
             },
         }
@@ -134,5 +139,27 @@ impl ApiError {
             }
             _ => HttpResponse::NotImplemented().finish(),
         }
+    }
+}
+
+impl std::error::Error for ApiErrorCode {
+    fn description(&self) -> &str {
+        self.message()
+    }
+
+    fn cause(&self) -> Option<&std::error::Error> {
+        None
+    }
+}
+
+impl std::convert::From<diesel::result::Error> for ApiErrorCode {
+    fn from(_error: diesel::result::Error) -> Self {
+        ApiErrorCode::BackendDatastoreError
+    }
+}
+
+impl std::convert::From<diesel::result::Error> for ApiError {
+    fn from(_error: diesel::result::Error) -> Self {
+        ApiError::new(ApiErrorCode::BackendDatastoreError)
     }
 }

@@ -4,20 +4,22 @@ use diesel::prelude::*;
 use crate::api::errors::{ApiError, ApiErrorCode};
 
 use super::{
-    ConnectionPooler, DeleteSubject, DeleteSubjectResponse, GetSubjectVersions, GetSubjects,
-    RegisterSchema, RegisterSchemaResponse, SubjectList, SubjectVersionsResponse,
+    ConnectionPooler, DeleteSubject, DeleteSubjectResponse, GetSubjectVersion,
+    GetSubjectVersionResponse, GetSubjectVersions, GetSubjects, RegisterSchema,
+    RegisterSchemaResponse, SubjectList, SubjectVersionsResponse, VerifySchemaRegistration,
 };
+
 impl Handler<GetSubjects> for ConnectionPooler {
     type Result = Result<SubjectList, ApiError>;
 
-    fn handle(&mut self, subject_list: GetSubjects, _: &mut Self::Context) -> Self::Result {
-        use super::schema::subjects::dsl::*;
+    fn handle(&mut self, _: GetSubjects, _: &mut Self::Context) -> Self::Result {
+        use super::schema::subjects::dsl::{name, subjects as db_subjects};
 
         let conn = self.connection()?;
 
-        subjects.select(name).load::<String>(&conn).map_or_else(
+        db_subjects.select(name).load::<String>(&conn).map_or_else(
             |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
-            |res| Ok(SubjectList { content: res }),
+            |subjects| Ok(SubjectList { content: subjects }),
         )
     }
 }
@@ -52,19 +54,17 @@ impl Handler<DeleteSubject> for ConnectionPooler {
     type Result = Result<DeleteSubjectResponse, ApiError>;
 
     fn handle(&mut self, query: DeleteSubject, _: &mut Self::Context) -> Self::Result {
-        use super::SchemaVersion;
-
         let conn = self.connection()?;
-        SchemaVersion::delete_subject_with_name(query.subject, &conn).map_or_else(
-            |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
-            |res| {
-                if res.len() != 0 {
-                    Ok(DeleteSubjectResponse { versions: res })
-                } else {
-                    Err(ApiError::new(ApiErrorCode::SubjectNotFound))
-                }
-            },
-        )
+        DeleteSubject::delete(query.subject, &conn)
+    }
+}
+
+impl Handler<GetSubjectVersion> for ConnectionPooler {
+    type Result = Result<GetSubjectVersionResponse, ApiError>;
+
+    fn handle(&mut self, query: GetSubjectVersion, _: &mut Self::Context) -> Self::Result {
+        let conn = self.connection()?;
+        query.execute(&conn)
     }
 }
 
@@ -89,5 +89,14 @@ impl Handler<RegisterSchema> for ConnectionPooler {
         Ok(RegisterSchemaResponse {
             id: format!("{}", schema_id),
         })
+    }
+}
+
+impl Handler<VerifySchemaRegistration> for ConnectionPooler {
+    type Result = Result<GetSubjectVersionResponse, ApiError>;
+
+    fn handle(&mut self, verify: VerifySchemaRegistration, _: &mut Self::Context) -> Self::Result {
+        let conn = self.connection()?;
+        verify.execute(&conn)
     }
 }

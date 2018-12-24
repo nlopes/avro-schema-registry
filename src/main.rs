@@ -76,6 +76,12 @@ fn main() -> Result<(), Box<Error>> {
             .resource("/subjects/{subject}/versions/{version}", |r| {
                 r.get().with(api::get_subject_version)
             })
+            .resource("/subjects/{subject}/versions/latest/schema", |r| {
+                r.get().with(api::get_subject_version_latest_schema)
+            })
+            .resource("/subjects/{subject}/versions/{version}/schema", |r| {
+                r.get().with(api::get_subject_version_schema)
+            })
             .resource("/schemas/ids/{id}", |r| r.get().with(api::get_schema))
             .boxed(),
         ]
