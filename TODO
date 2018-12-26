@@ -2,3 +2,4 @@
   - this looks weird and shouldn't be done this way, it was just easier to move quickly - fix it
   - check error_chain!
 - [ ] password as bytes?
+- [ ] add /compatibility endpoint
