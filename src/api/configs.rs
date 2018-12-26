@@ -1,8 +1,8 @@
 use actix_web::{AsyncResponder, FutureResponse, HttpResponse, Json, Path, State};
 use futures::future::Future;
 
+use crate::app::AppState;
 use crate::db::models::{GetConfig, GetSubjectConfig, SetConfig, SetSubjectConfig};
-use crate::AppState;
 
 pub fn get_config(state: State<AppState>) -> FutureResponse<HttpResponse> {
     info!("path=/config,method=get");

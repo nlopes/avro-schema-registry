@@ -2,8 +2,8 @@ use actix_web::{AsyncResponder, FutureResponse, HttpResponse, Path, State};
 use futures::future::{result, Future};
 
 use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::app::{AppState, VersionLimit};
 use crate::db::models::{DeleteSchemaVersion, GetSchema};
-use crate::{AppState, Limit};
 
 pub fn get_schema(id: Path<i64>, state: State<AppState>) -> FutureResponse<HttpResponse> {
     info!("method=get,id={}", id);

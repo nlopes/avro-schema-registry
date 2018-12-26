@@ -1,9 +1,9 @@
 use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::app::{AppState, VersionLimit};
 use crate::db::models::{
     DeleteSubject, GetSubjectVersion, GetSubjectVersions, GetSubjects, RegisterSchema,
     SchemaResponse, VerifySchemaRegistration,
 };
-use crate::{AppState, Limit};
 
 use actix_web::{AsyncResponder, FutureResponse, HttpRequest, HttpResponse, Json, Path, State};
 use futures::future::{result, Future};
