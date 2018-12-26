@@ -1,6 +1,4 @@
-- [ ] return messages for all requests on failure/error
-```json
-{"error_code":40402,"message":"Version not found"}
-```
 - [ ] all errors (low level included) propagate as api errors
   - this looks weird and shouldn't be done this way, it was just easier to move quickly - fix it
+  - check error_chain!
+- [ ] password as bytes?
