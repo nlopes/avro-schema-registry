@@ -12,7 +12,6 @@ use crate::api::errors::{ApiError, ApiErrorCode};
 
 #[derive(Debug, Insertable, Identifiable, Associations, Queryable, Serialize)]
 #[table_name = "subjects"]
-//#[has_many(SchemaVersions)]
 pub struct Subject {
     pub id: i64,
     pub name: String,
