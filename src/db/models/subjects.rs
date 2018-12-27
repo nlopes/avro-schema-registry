@@ -1,16 +1,13 @@
 use actix::Message;
-use avro_rs;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use sha2::Sha256;
 
 use super::schema::*;
-use super::Schema;
 use super::SchemaVersion;
 
 use crate::api::errors::{ApiError, ApiErrorCode};
 
-#[derive(Debug, Insertable, Identifiable, Associations, Queryable, Serialize)]
+#[derive(Debug, Identifiable, Associations, Queryable, Serialize)]
 #[table_name = "subjects"]
 pub struct Subject {
     pub id: i64,
@@ -20,7 +17,27 @@ pub struct Subject {
 }
 
 impl Subject {
-    pub fn get_by_name(subject: String, conn: &PgConnection) -> Result<Self, ApiError> {
+    /// Insert a new subject but ignore if it already exists.
+    ///
+    /// *Note:* 'ignore' in the case above means we will update the name if it already
+    /// exists. This spares us complicated code to fetch, verify and then insert.
+    pub fn insert(conn: &PgConnection, subject: String) -> Result<Subject, ApiError> {
+        use super::schema::subjects::dsl::*;
+
+        diesel::insert_into(subjects)
+            .values((
+                name.eq(&subject),
+                created_at.eq(diesel::dsl::now),
+                updated_at.eq(diesel::dsl::now),
+            ))
+            .on_conflict(name)
+            .do_update()
+            .set(name.eq(&subject))
+            .get_result::<Subject>(conn)
+            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+    }
+
+    pub fn get_by_name(conn: &PgConnection, subject: String) -> Result<Self, ApiError> {
         use super::schema::subjects::dsl::{name, subjects};
         match subjects.filter(name.eq(subject)).first::<Subject>(conn) {
             Ok(s) => Ok(s),
@@ -127,94 +144,6 @@ impl GetSubjectVersion {
 
 impl Message for GetSubjectVersion {
     type Result = Result<GetSubjectVersionResponse, ApiError>;
-}
-
-#[derive(Debug, Serialize)]
-pub struct RegisterSchemaResponse {
-    pub id: String,
-}
-
-pub struct RegisterSchema {
-    pub subject: String,
-    pub schema: String,
-}
-
-impl RegisterSchema {
-    pub fn parse(json: String) -> Result<avro_rs::Schema, ApiError> {
-        avro_rs::Schema::parse_str(&json)
-            .map_err(|_| ApiError::new(ApiErrorCode::InvalidAvroSchema))
-    }
-
-    fn generate_fingerprint(&self) -> Result<String, ApiError> {
-        Ok(format!(
-            "{}",
-            RegisterSchema::parse(self.schema.to_owned())?.fingerprint::<Sha256>()
-        ))
-    }
-
-    pub fn find_schema(&self, conn: &PgConnection) -> Result<Option<Schema>, ApiError> {
-        use super::schema::schemas::dsl::{fingerprint2, schemas};
-        let fingerprint = self.generate_fingerprint()?;
-        Ok(schemas
-            .filter(fingerprint2.eq(fingerprint))
-            .load::<Schema>(conn)
-            .map_err(|e| {
-                println!("{}", e);
-                ApiError::new(ApiErrorCode::BackendDatastoreError)
-            })?
-            .pop())
-    }
-
-    pub fn create_new_schema(&self, conn: &PgConnection) -> Result<Subject, ApiError> {
-        use super::schema::schemas::dsl::{
-            created_at as schema_created_at, fingerprint, fingerprint2, json, schemas,
-            updated_at as schema_updated_at,
-        };
-        use super::schema::subjects::dsl::{
-            created_at as subject_created_at, name, subjects, updated_at as subject_updated_at,
-        };
-
-        use super::schema::schema_versions::dsl::{schema_id, schema_versions, subject_id};
-
-        // TODO: we use the same in both fields. This means we don't do the same as
-        // salsify
-        let schema_fingerprint = self.generate_fingerprint()?;
-
-        conn.transaction::<_, diesel::result::Error, _>(|| {
-            diesel::insert_into(schemas)
-                .values((
-                    json.eq(self.schema.to_owned()),
-                    fingerprint.eq(schema_fingerprint.to_owned()),
-                    fingerprint2.eq(schema_fingerprint),
-                    schema_created_at.eq(diesel::dsl::now),
-                    schema_updated_at.eq(diesel::dsl::now),
-                ))
-                .get_result::<Schema>(conn)
-                .and_then(|schema| {
-                    diesel::insert_into(subjects)
-                        .values((
-                            name.eq(self.subject.to_owned()),
-                            subject_created_at.eq(diesel::dsl::now),
-                            subject_updated_at.eq(diesel::dsl::now),
-                        ))
-                        .get_result::<Subject>(conn)
-                        .and_then(|subject| {
-                            diesel::insert_into(schema_versions)
-                                .values((subject_id.eq(subject.id), schema_id.eq(schema.id)))
-                                .execute(conn)
-                                .and(Ok(subject))
-                        })
-                })
-        })
-        .map_or_else(
-            |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
-            |x| Ok(x),
-        )
-    }
-}
-
-impl Message for RegisterSchema {
-    type Result = Result<RegisterSchemaResponse, ApiError>;
 }
 
 pub struct VerifySchemaRegistration {

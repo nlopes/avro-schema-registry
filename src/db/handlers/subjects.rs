@@ -5,8 +5,8 @@ use crate::api::errors::{ApiError, ApiErrorCode};
 
 use super::{
     ConnectionPooler, DeleteSubject, DeleteSubjectResponse, GetSubjectVersion,
-    GetSubjectVersionResponse, GetSubjectVersions, GetSubjects, RegisterSchema,
-    RegisterSchemaResponse, SubjectList, SubjectVersionsResponse, VerifySchemaRegistration,
+    GetSubjectVersionResponse, GetSubjectVersions, GetSubjects, SubjectList,
+    SubjectVersionsResponse, VerifySchemaRegistration,
 };
 
 impl Handler<GetSubjects> for ConnectionPooler {
@@ -67,31 +67,6 @@ impl Handler<GetSubjectVersion> for ConnectionPooler {
         query.execute(&conn)
     }
 }
-
-impl Handler<RegisterSchema> for ConnectionPooler {
-    type Result = Result<RegisterSchemaResponse, ApiError>;
-    fn handle(&mut self, data: RegisterSchema, _: &mut Self::Context) -> Self::Result {
-        let conn = self.connection()?;
-        let schema = data.find_schema(&conn)?;
-        let schema_id = match schema {
-            Some(s) => {
-                // TODO
-                // if I can find a version for this schema, then
-                s.id
-            }
-            None => {
-                let sc = data.create_new_schema(&conn).ok().unwrap();
-                println!("No schema, should have created {:?}", sc);
-                sc.id
-            }
-        };
-
-        Ok(RegisterSchemaResponse {
-            id: format!("{}", schema_id),
-        })
-    }
-}
-
 impl Handler<VerifySchemaRegistration> for ConnectionPooler {
     type Result = Result<GetSubjectVersionResponse, ApiError>;
 

@@ -154,10 +154,10 @@ impl Config {
     }
 
     pub fn get_with_subject_name(
-        subject_name: String,
         conn: &PgConnection,
+        subject_name: String,
     ) -> Result<String, ApiError> {
-        let subject = Subject::get_by_name(subject_name, conn)?;
+        let subject = Subject::get_by_name(conn, subject_name)?;
         match Config::belonging_to(&subject).get_result::<Config>(conn) {
             // This should always return ok. If it doesn't, that means someone manually
             // edited the configs entry with id 0. Not only that, but they set the column
@@ -171,13 +171,13 @@ impl Config {
     }
 
     pub fn set_with_subject_name(
+        conn: &PgConnection,
         subject_name: String,
         compat: String,
-        conn: &PgConnection,
     ) -> Result<String, ApiError> {
         use super::schema::configs::dsl::*;
 
-        let subject = Subject::get_by_name(subject_name, conn)?;
+        let subject = Subject::get_by_name(conn, subject_name)?;
         match Config::belonging_to(&subject).get_result::<Config>(conn) {
             Ok(config) => {
                 match diesel::update(&config)
@@ -209,7 +209,7 @@ impl Config {
     /// Updates the global compatibility level
     ///
     /// *NOTE*: if there is no global compatibility level, it sets it to the level passed
-    pub fn set_global_compatibility(compat: &str, conn: &PgConnection) -> Result<String, ApiError> {
+    pub fn set_global_compatibility(conn: &PgConnection, compat: &str) -> Result<String, ApiError> {
         use super::schema::configs::dsl::*;
 
         match diesel::update(configs.find(0))

@@ -1,22 +1,15 @@
-use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::api::{
+    errors::{ApiError, ApiErrorCode},
+    SchemaBody,
+};
 use crate::app::{AppState, VersionLimit};
 use crate::db::models::{
-    DeleteSubject, GetSubjectVersion, GetSubjectVersions, GetSubjects, RegisterSchema,
-    SchemaResponse, VerifySchemaRegistration,
+    DeleteSubject, GetSubjectVersion, GetSubjectVersions, GetSubjects, SchemaResponse,
+    VerifySchemaRegistration,
 };
 
 use actix_web::{AsyncResponder, FutureResponse, HttpRequest, HttpResponse, Json, Path, State};
 use futures::future::{result, Future};
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct SchemaBody {
-    schema: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct SubjectInfo {
-    subject: String,
-}
 
 pub fn get_subjects(req: HttpRequest<AppState>) -> FutureResponse<HttpResponse> {
     req.state()
@@ -164,25 +157,6 @@ pub fn get_subject_version_latest_schema(
         .and_then(|res| match res {
             Ok(r) => Ok(HttpResponse::Ok().json(SchemaResponse { schema: r.schema })),
             Err(e) => Ok(e.http_response()),
-        })
-        .responder()
-}
-
-pub fn register_schema(
-    path: Path<SubjectInfo>,
-    body: Json<SchemaBody>,
-    state: State<AppState>,
-) -> FutureResponse<HttpResponse> {
-    state
-        .db
-        .send(RegisterSchema {
-            subject: path.subject.to_owned(),
-            schema: body.into_inner().schema,
-        })
-        .from_err()
-        .and_then(|res| match res {
-            Ok(response) => Ok(HttpResponse::Ok().json(response)),
-            Err(_) => Ok(HttpResponse::InternalServerError().into()),
         })
         .responder()
 }
