@@ -14,12 +14,16 @@ impl Actor for ConnectionPooler {
 type DBConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 impl ConnectionPooler {
-    pub fn init() -> Addr<Self> {
+    pub fn pool() -> Pool<ConnectionManager<PgConnection>> {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let manager = ConnectionManager::<PgConnection>::new(database_url);
-        let conn = Pool::new(manager).expect("Failed to create pool.");
+        Pool::new(manager).expect("Failed to create pool.")
+    }
+
+    pub fn init() -> Addr<Self> {
         // TODO: remove this magic number 4
-        SyncArbiter::start(4, move || ConnectionPooler(conn.clone()))
+        let pool = ConnectionPooler::pool();
+        SyncArbiter::start(4, move || ConnectionPooler(pool.clone()))
     }
 
     pub fn connection(&self) -> Result<DBConnection, ApiError> {
