@@ -26,53 +26,79 @@ pub struct NewSchemaVersion {
     pub schema_id: i64,
 }
 
-impl SchemaVersion {
-    // TODO: I'm not happy with this. Positional arguments are so prone to errors it's not
-    // even funny. Part of the issue is that we call this function usually after a select,
-    // and said select only allows doing this with tuples. Sucks.
-    pub fn from_tuple((id, version, subject_id, schema_id): (i64, Option<i32>, i64, i64)) -> Self {
-        SchemaVersion {
-            id: id,
-            version: version,
-            subject_id: subject_id,
-            schema_id: schema_id,
-        }
-    }
+pub type SchemaVersionFields = NewSchemaVersion;
 
-    pub fn insert(
-        conn: &PgConnection,
-        schema_version: NewSchemaVersion,
-    ) -> Result<SchemaVersion, ApiError> {
-        use super::schema::schema_versions::dsl::*;
+impl SchemaVersion {
+    pub fn insert(conn: &PgConnection, sv: NewSchemaVersion) -> Result<SchemaVersion, ApiError> {
+        use super::schema::schema_versions::dsl::schema_versions;
         diesel::insert_into(schema_versions)
-            .values(&schema_version)
+            .values(&sv)
             .get_result::<SchemaVersion>(conn)
             .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
     }
 
+    pub fn find(
+        conn: &PgConnection,
+        find_subject_id: i64,
+        find_schema_id: i64,
+    ) -> Result<SchemaVersion, ApiError> {
+        use super::schema::schema_versions::dsl::{schema_id, schema_versions, subject_id};
+
+        schema_versions
+            .filter(subject_id.eq(find_subject_id))
+            .filter(schema_id.eq(find_schema_id))
+            .get_result::<SchemaVersion>(conn)
+            .or_else(|_| Err(ApiError::new(ApiErrorCode::VersionNotFound)))
+    }
+
     pub fn with_schema_and_subject(
         conn: &PgConnection,
-        search_subject_id: i64,
+        search_subject_name: String,
         search_schema_id: i64,
     ) -> Result<usize, ApiError> {
         use super::schema::schema_versions::dsl::{id, schema_id, schema_versions, subject_id};
         use super::schema::schemas::dsl::{id as schemas_id, schemas};
-        use super::schema::subjects::dsl::{id as subjects_id, subjects};
+        use super::schema::subjects::dsl::{id as subjects_id, name as subject_name, subjects};
 
         schema_versions
             .inner_join(subjects.on(subject_id.eq(subjects_id)))
             .inner_join(schemas.on(schema_id.eq(schemas_id)))
-            .filter(subject_id.eq(search_subject_id))
+            .filter(subject_name.eq(search_subject_name))
             .filter(schema_id.eq(search_schema_id))
             .select(id)
             .execute(conn)
             .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
     }
 
+    pub fn versions_with_subject_name(
+        conn: &PgConnection,
+        subject_name: String,
+    ) -> Result<Vec<Option<i32>>, ApiError> {
+        use super::schema::schema_versions::dsl::{schema_versions, subject_id, version};
+        use super::schema::subjects::dsl::{id as subjects_id, name, subjects};
+
+        schema_versions
+            .inner_join(subjects.on(subject_id.eq(subjects_id)))
+            .filter(name.eq(&subject_name))
+            .select(version)
+            .order(version.asc())
+            .load::<Option<i32>>(conn)
+            .map_or_else(
+                |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                |versions| {
+                    if versions.len() == 0 {
+                        Err(ApiError::new(ApiErrorCode::SubjectNotFound))
+                    } else {
+                        Ok(versions)
+                    }
+                },
+            )
+    }
+
     pub fn latest_version_with_subject_name(
         conn: &PgConnection,
         subject_name: String,
-    ) -> Result<Option<i32>, ApiError> {
+    ) -> Result<Option<Option<i32>>, ApiError> {
         use super::schema::schema_versions::dsl::{schema_versions, subject_id, version};
         use super::schema::subjects::dsl::{id as subjects_id, name, subjects};
 
@@ -82,12 +108,13 @@ impl SchemaVersion {
             .select(version)
             .order(version.desc())
             .first::<Option<i32>>(conn)
+            .optional()
             .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
     }
 
     pub fn get_schema_id_from_latest(
-        subject_name: String,
         conn: &PgConnection,
+        subject_name: String,
     ) -> Result<(i64, i32, String), ApiError> {
         use super::schema::schema_versions::dsl::{
             schema_id, schema_versions, subject_id, version,
@@ -123,10 +150,12 @@ impl SchemaVersion {
         })
     }
 
+    /// TODO: This should return a struct, not a tuple as it's then hard to interface with
+    /// this method
     pub fn get_schema_id(
+        conn: &PgConnection,
         subject_name: String,
         schema_version: i32,
-        conn: &PgConnection,
     ) -> Result<(i64, i32, String), ApiError> {
         use super::schema::schema_versions::dsl::{
             schema_id, schema_versions, subject_id, version,
@@ -159,8 +188,8 @@ impl SchemaVersion {
     }
 
     pub fn delete_subject_with_name(
-        subject: String,
         conn: &PgConnection,
+        subject: String,
     ) -> Result<Vec<Option<i32>>, diesel::result::Error> {
         use super::schema::schema_versions::dsl::{
             id, schema_id, schema_versions, subject_id, version,
@@ -174,17 +203,16 @@ impl SchemaVersion {
                 .inner_join(schemas.on(schema_id.eq(schemas_id)))
                 .filter(name.eq(&subject))
                 .select((id, version, subject_id, schema_id))
-                .load::<(i64, Option<i32>, i64, i64)>(conn)?
+                .load::<SchemaVersion>(conn)?
                 .into_iter()
                 .map(|entry| {
-                    let sv = SchemaVersion::from_tuple(entry);
-                    match sv.delete(&conn) {
+                    match entry.delete(&conn) {
                         Err(e) => {
                             info!("error deleting: {}", e);
                         }
                         _ => (),
                     };
-                    sv.version
+                    entry.version
                 })
                 .collect())
         })

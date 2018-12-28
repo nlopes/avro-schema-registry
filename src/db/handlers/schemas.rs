@@ -3,8 +3,8 @@ use actix::Handler;
 use crate::api::errors::ApiError;
 
 use super::{
-    ConnectionPooler, DeleteSchemaVersion, GetSchema, RegisterSchema, RegisterSchemaResponse,
-    Schema, SchemaResponse, SchemaVersion,
+    ConnectionPooler, DeleteSchemaVersion, GetSchema, GetSubjectVersionResponse, RegisterSchema,
+    RegisterSchemaResponse, Schema, SchemaResponse, SchemaVersion, VerifySchemaRegistration,
 };
 
 impl Handler<GetSchema> for ConnectionPooler {
@@ -12,8 +12,9 @@ impl Handler<GetSchema> for ConnectionPooler {
 
     fn handle(&mut self, schema_query: GetSchema, _: &mut Self::Context) -> Self::Result {
         let conn = self.connection()?;
-        Schema::get_json_by_id(&conn, schema_query.id)
-            .and_then(|json| Ok(SchemaResponse { schema: json }))
+        Schema::get_by_id(&conn, schema_query.id).map(|schema| SchemaResponse {
+            schema: schema.json,
+        })
     }
 }
 
@@ -34,10 +35,17 @@ impl Handler<RegisterSchema> for ConnectionPooler {
     type Result = Result<RegisterSchemaResponse, ApiError>;
     fn handle(&mut self, data: RegisterSchema, _: &mut Self::Context) -> Self::Result {
         let conn = self.connection()?;
-        let schema = Schema::register_new_version(&conn, data)?;
-
-        Ok(RegisterSchemaResponse {
+        Schema::register_new_version(&conn, data).map(|schema| RegisterSchemaResponse {
             id: format!("{}", schema.id),
         })
+    }
+}
+
+impl Handler<VerifySchemaRegistration> for ConnectionPooler {
+    type Result = Result<GetSubjectVersionResponse, ApiError>;
+
+    fn handle(&mut self, verify: VerifySchemaRegistration, _: &mut Self::Context) -> Self::Result {
+        let conn = self.connection()?;
+        Schema::verify_registration(&conn, verify.subject, verify.schema)
     }
 }

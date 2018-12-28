@@ -3,7 +3,6 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
 use super::schema::*;
-use super::SchemaVersion;
 
 use crate::api::errors::{ApiError, ApiErrorCode};
 
@@ -37,6 +36,15 @@ impl Subject {
             .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
     }
 
+    pub fn distinct_names(conn: &PgConnection) -> Result<Vec<String>, ApiError> {
+        use super::schema::subjects::dsl::{name, subjects};
+
+        subjects
+            .select(name)
+            .load::<String>(conn)
+            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+    }
+
     pub fn get_by_name(conn: &PgConnection, subject: String) -> Result<Self, ApiError> {
         use super::schema::subjects::dsl::{name, subjects};
         match subjects.filter(name.eq(subject)).first::<Subject>(conn) {
@@ -46,6 +54,24 @@ impl Subject {
             }
             _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
         }
+    }
+
+    pub fn delete_by_name(
+        conn: &PgConnection,
+        subject_name: String,
+    ) -> Result<Vec<Option<i32>>, ApiError> {
+        use super::SchemaVersion;
+
+        SchemaVersion::delete_subject_with_name(&conn, subject_name).map_or_else(
+            |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+            |res| {
+                if res.len() != 0 {
+                    Ok(res)
+                } else {
+                    Err(ApiError::new(ApiErrorCode::SubjectNotFound))
+                }
+            },
+        )
     }
 }
 
@@ -83,26 +109,6 @@ pub struct DeleteSubject {
     pub subject: String,
 }
 
-impl DeleteSubject {
-    pub fn delete(
-        subject_name: String,
-        conn: &PgConnection,
-    ) -> Result<DeleteSubjectResponse, ApiError> {
-        use super::SchemaVersion;
-
-        SchemaVersion::delete_subject_with_name(subject_name, &conn).map_or_else(
-            |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
-            |res| {
-                if res.len() != 0 {
-                    Ok(DeleteSubjectResponse { versions: res })
-                } else {
-                    Err(ApiError::new(ApiErrorCode::SubjectNotFound))
-                }
-            },
-        )
-    }
-}
-
 impl Message for DeleteSubject {
     type Result = Result<DeleteSubjectResponse, ApiError>;
 }
@@ -122,79 +128,6 @@ pub struct GetSubjectVersionResponse {
     pub schema: String,
 }
 
-impl GetSubjectVersion {
-    pub fn execute(&self, conn: &PgConnection) -> Result<GetSubjectVersionResponse, ApiError> {
-        match self.version {
-            Some(v) => SchemaVersion::get_schema_id(self.subject.to_string(), v as i32, conn),
-            None => SchemaVersion::get_schema_id_from_latest(self.subject.to_string(), conn),
-        }
-        .map_or_else(
-            |e| Err(e),
-            |o| {
-                Ok(GetSubjectVersionResponse {
-                    subject: self.subject.to_string(),
-                    id: o.0,
-                    version: o.1,
-                    schema: o.2,
-                })
-            },
-        )
-    }
-}
-
 impl Message for GetSubjectVersion {
-    type Result = Result<GetSubjectVersionResponse, ApiError>;
-}
-
-pub struct VerifySchemaRegistration {
-    pub subject: String,
-    pub schema: String,
-}
-
-impl VerifySchemaRegistration {
-    pub fn execute(&self, conn: &PgConnection) -> Result<GetSubjectVersionResponse, ApiError> {
-        use super::schema::schema_versions::dsl::{
-            schema_id, schema_versions, subject_id, version,
-        };
-        use super::schema::schemas::dsl::{id as schemas_id, json, schemas};
-        use super::schema::subjects::dsl::{id as subjects_id, name, subjects};
-
-        conn.transaction::<_, ApiError, _>(|| {
-            subjects
-                .filter(name.eq(self.subject.to_string()))
-                .select(subjects_id)
-                .get_result(conn)
-                .or_else(|_| Err(ApiError::new(ApiErrorCode::SubjectNotFound)))
-                .and_then(|subject_id_found: i64| {
-                    schemas
-                        .filter(json.eq(self.schema.to_string()))
-                        .select(schemas_id)
-                        .get_result(conn)
-                        .or_else(|_| Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
-                        .and_then(|schema_id_found| {
-                            schema_versions
-                                .filter(subject_id.eq(subject_id_found))
-                                .filter(schema_id.eq(schema_id_found))
-                                .select(version)
-                                .get_result(conn)
-                                .or_else(|_| Err(ApiError::new(ApiErrorCode::VersionNotFound)))
-                                .and_then(|schema_version_version: Option<i32>| {
-                                    Ok(GetSubjectVersionResponse {
-                                        subject: self.subject.to_string(),
-                                        id: schema_id_found,
-                                        version: schema_version_version.ok_or_else(|| {
-                                            ApiError::new(ApiErrorCode::VersionNotFound)
-                                        })?,
-                                        schema: self.schema.to_string(),
-                                    })
-                                })
-                        })
-                })
-        })
-        .map_or_else(|e| Err(e), |x| Ok(x))
-    }
-}
-
-impl Message for VerifySchemaRegistration {
     type Result = Result<GetSubjectVersionResponse, ApiError>;
 }

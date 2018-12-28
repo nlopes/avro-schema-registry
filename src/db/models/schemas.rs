@@ -7,7 +7,7 @@ use crate::api::errors::{ApiError, ApiErrorCode};
 
 use super::schema::*;
 
-use super::{NewSchemaVersion, SchemaVersion, Subject};
+use super::{GetSubjectVersionResponse, NewSchemaVersion, SchemaVersion, Subject};
 
 #[derive(Debug, Identifiable, Associations, Queryable)]
 #[table_name = "schemas"]
@@ -77,12 +77,9 @@ impl Schema {
             let db_schema = Schema::find_by_fingerprint(&conn, fingerprint.to_owned())?;
             match db_schema {
                 Some(s) => {
-                    let db_subject = Subject::get_by_name(conn, subject.to_owned())?;
-                    match SchemaVersion::with_schema_and_subject(conn, db_subject.id, s.id) {
-                        Ok(_) => Ok(s),
-                        Err(_) => {
-                            Schema::create_new_version(conn, None, fingerprint, subject, Some(s))
-                        }
+                    match SchemaVersion::with_schema_and_subject(conn, subject.to_owned(), s.id)? {
+                        1 => Ok(s),
+                        _ => Schema::create_new_version(conn, None, fingerprint, subject, Some(s)),
                     }
                 }
                 None => Schema::create_new_version(conn, Some(json), fingerprint, subject, None),
@@ -97,8 +94,14 @@ impl Schema {
         subject_name: String,
         db_schema: Option<Schema>,
     ) -> Result<Schema, ApiError> {
-        let latest =
+        let optional_version =
             SchemaVersion::latest_version_with_subject_name(conn, subject_name.to_owned())?;
+
+        let latest = if let Some(l) = optional_version {
+            l
+        } else {
+            None
+        };
 
         // If it already exists, we don't care, we just update and get the subject.
         let subject = Subject::insert(conn, subject_name)?;
@@ -156,14 +159,43 @@ impl Schema {
             .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
     }
 
-    // TODO: it's a bit crap to pre-optimise on this select. This function name smells too.
-    pub fn get_json_by_id(conn: &PgConnection, schema_id: i64) -> Result<String, ApiError> {
+    pub fn get_by_json(conn: &PgConnection, data: String) -> Result<Self, ApiError> {
+        use super::schema::schemas::dsl::*;
+        schemas
+            .filter(json.eq(data))
+            .get_result::<Schema>(conn)
+            .or(Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
+    }
+
+    pub fn get_by_id(conn: &PgConnection, schema_id: i64) -> Result<Schema, ApiError> {
         use super::schema::schemas::dsl::*;
         schemas
             .find(schema_id)
-            .select(json)
-            .get_result::<String>(conn)
+            .get_result::<Schema>(conn)
             .or(Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
+    }
+
+    pub fn verify_registration(
+        conn: &PgConnection,
+        subject_name: String,
+        schema_json: String,
+    ) -> Result<VerifyRegistrationResponse, ApiError> {
+        conn.transaction::<_, ApiError, _>(|| {
+            Subject::get_by_name(conn, subject_name.to_string()).and_then(|subject| {
+                Schema::get_by_json(conn, schema_json.to_string()).and_then(|schema| {
+                    SchemaVersion::find(conn, subject.id, schema.id).and_then(|schema_version| {
+                        Ok(VerifyRegistrationResponse {
+                            subject: subject.name,
+                            id: schema.id,
+                            version: schema_version
+                                .version
+                                .ok_or_else(|| ApiError::new(ApiErrorCode::VersionNotFound))?,
+                            schema: schema.json,
+                        })
+                    })
+                })
+            })
+        })
     }
 }
 
@@ -180,3 +212,14 @@ pub struct RegisterSchema {
 impl Message for RegisterSchema {
     type Result = Result<RegisterSchemaResponse, ApiError>;
 }
+
+pub struct VerifySchemaRegistration {
+    pub subject: String,
+    pub schema: String,
+}
+
+impl Message for VerifySchemaRegistration {
+    type Result = Result<GetSubjectVersionResponse, ApiError>;
+}
+
+pub type VerifyRegistrationResponse = GetSubjectVersionResponse;
