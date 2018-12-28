@@ -1,6 +1,6 @@
 use actix_web::{http::StatusCode, HttpResponse};
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub enum ApiStatusCode {
     NotFound = 404,
     Conflict = 409,
@@ -70,13 +70,13 @@ impl std::fmt::Display for ApiErrorCode {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct ApiErrorResponse {
     pub error_code: ApiErrorCode,
     pub message: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct ApiError {
     pub status_code: ApiStatusCode,
     pub response: ApiErrorResponse,
