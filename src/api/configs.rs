@@ -37,6 +37,7 @@ pub fn put_config(
         .responder()
 }
 
+/// Get compatibility level for a subject.
 pub fn get_subject_config(
     (subject_path, state): (Path<String>, State<AppState>),
 ) -> FutureResponse<HttpResponse> {
@@ -54,6 +55,12 @@ pub fn get_subject_config(
         .responder()
 }
 
+/// Update compatibility level for the specified subject.
+///
+/// *Note:* The confluent schema registry does not return "Subject not found" if the
+/// subject does not exist, due to the way they map configs to subjects. We map them
+/// internally to subject_id's therefore, we can *and will* return "Schema not found" if
+/// no subject is found with the given name.
 pub fn put_subject_config(
     (subject_path, body, state): (Path<String>, Json<SetConfig>, State<AppState>),
 ) -> FutureResponse<HttpResponse> {
