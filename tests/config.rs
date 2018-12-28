@@ -5,18 +5,19 @@ use speculate::speculate;
 
 use crate::common::request::make_request;
 use crate::db;
+
 use avro_schema_registry::app;
-use avro_schema_registry::db::ConnectionPooler;
 
 speculate! {
     before {
-        db::config::reset_global();
-        let pool = ConnectionPooler::pool();
+        let conn = db::connection::connection();
         let mut srv = test::TestServer::with_factory(app::create_avro_api_app);
+
+        db::config::reset_global(&conn);
     }
 
     after {
-        db::cleanup::reset(&pool);
+        db::cleanup::reset(&conn);
     }
 
     describe "get global config" {
@@ -79,7 +80,7 @@ speculate! {
     describe "get compatibility level" {
         context "existent subject" {
             before {
-                db::subject::create_test_subject_with_config("FULL");
+                db::subject::create_test_subject_with_config(&conn, "FULL");
                 let response = make_request(
                     &mut srv,
                     Method::GET,
@@ -120,7 +121,7 @@ speculate! {
     describe "update compatibility level" {
         describe "existing subject" {
             before {
-                db::subject::create_test_subject_with_config("FULL");
+                db::subject::create_test_subject_with_config(&conn, "FULL");
             }
 
             context "with valid compatibility FORWARD_TRANSITIVE" {

@@ -1,16 +1,14 @@
 use diesel::prelude::*;
 
-use super::connection;
+use avro_schema_registry::api::errors::ApiError;
 use avro_schema_registry::db::models::Subject;
 
-pub fn create_test_subject_with_config(compat: &str) {
+pub fn create_test_subject_with_config(conn: &super::PgConnection, compat: &str) {
     use avro_schema_registry::db::models::schema::configs::dsl::{
         compatibility, configs, created_at as config_created_at, subject_id,
         updated_at as config_updated_at,
     }; ;
     use avro_schema_registry::db::models::schema::subjects::dsl::*;
-
-    let conn = connection::connection();
 
     conn.transaction::<_, diesel::result::Error, _>(|| {
         diesel::insert_into(subjects)
@@ -19,7 +17,7 @@ pub fn create_test_subject_with_config(compat: &str) {
                 created_at.eq(diesel::dsl::now),
                 updated_at.eq(diesel::dsl::now),
             ))
-            .get_result::<Subject>(&conn)
+            .get_result::<Subject>(conn)
             .and_then(|subject| {
                 diesel::insert_into(configs)
                     .values((
@@ -28,8 +26,29 @@ pub fn create_test_subject_with_config(compat: &str) {
                         config_updated_at.eq(diesel::dsl::now),
                         subject_id.eq(subject.id),
                     ))
-                    .execute(&conn)
+                    .execute(conn)
             })
     })
     .unwrap();
+}
+
+pub fn add(conn: &super::PgConnection, subjects: Vec<String>) {
+    use avro_schema_registry::db::models::Subject;
+
+    conn.transaction::<String, ApiError, _>(|| {
+        Ok(subjects
+            .into_iter()
+            .map(|subject| {
+                Subject::insert(conn, subject)
+                    .expect("could not insert subject")
+                    .name
+            })
+            .collect())
+    })
+    .unwrap();
+}
+
+pub fn reset(conn: &super::PgConnection) {
+    use avro_schema_registry::db::models::schema::subjects::dsl::*;
+    diesel::delete(subjects).execute(conn).unwrap();
 }

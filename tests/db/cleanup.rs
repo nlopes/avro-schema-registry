@@ -1,11 +1,4 @@
-use super::connection;
-
-use avro_schema_registry::db::ConnectionPooler;
-
-use diesel::pg::PgConnection;
-use diesel::r2d2::{ConnectionManager, Pool};
-
-pub fn reset(pool: &Pool<ConnectionManager<PgConnection>>) {
+pub fn reset(conn: &super::PgConnection) {
     use diesel::prelude::*;
 
     use avro_schema_registry::db::models::schema::configs::dsl::configs;
@@ -13,13 +6,11 @@ pub fn reset(pool: &Pool<ConnectionManager<PgConnection>>) {
     use avro_schema_registry::db::models::schema::schemas::dsl::schemas;
     use avro_schema_registry::db::models::schema::subjects::dsl::subjects;
 
-    let conn = pool.get().unwrap();
-
     conn.transaction::<_, diesel::result::Error, _>(|| {
-        diesel::delete(configs).execute(&conn)?;
-        diesel::delete(schemas).execute(&conn)?;
-        diesel::delete(subjects).execute(&conn)?;
-        diesel::delete(schema_versions).execute(&conn)
+        diesel::delete(configs).execute(conn)?;
+        diesel::delete(schemas).execute(conn)?;
+        diesel::delete(subjects).execute(conn)?;
+        diesel::delete(schema_versions).execute(conn)
     })
     .unwrap();
 }
