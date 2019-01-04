@@ -7,6 +7,7 @@ use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use crate::api::errors::{ApiError, ApiErrorCode, ApiStatusCode};
 
 pub struct ConnectionPooler(pub Pool<ConnectionManager<PgConnection>>);
+
 impl Actor for ConnectionPooler {
     type Context = SyncContext<Self>;
 }
@@ -20,10 +21,9 @@ impl ConnectionPooler {
         Pool::new(manager).expect("Failed to create pool.")
     }
 
-    pub fn init() -> Addr<Self> {
-        // TODO: remove this magic number 4
+    pub fn init(n_workers: usize) -> Addr<Self> {
         let pool = ConnectionPooler::pool();
-        SyncArbiter::start(4, move || ConnectionPooler(pool.clone()))
+        SyncArbiter::start(n_workers, move || ConnectionPooler(pool.clone()))
     }
 
     pub fn connection(&self) -> Result<DBConnection, ApiError> {

@@ -30,47 +30,51 @@ pub fn create_monitoring_app() -> App {
 }
 
 pub fn create_avro_api_app() -> App<AppState> {
+    // TODO: remove this magic number 4?
+    let db_addr = ConnectionPooler::init(4);
+    create_avro_api_app_with_state(AppState {
+        db: db_addr.clone(),
+    })
+}
+
+pub fn create_avro_api_app_with_state(state: AppState) -> App<AppState> {
     let password =
         env::var("SCHEMA_REGISTRY_PASSWORD").expect("Must pass a schema registry password");
 
-    let db_addr = ConnectionPooler::init();
-
-    App::with_state(AppState {
-        db: db_addr.clone(),
-    })
-    .middleware(Logger::default())
-    .middleware(middleware::VerifyAcceptHeader)
-    .middleware(middleware::VerifyAuthorization::new(&password))
-    .resource("/config", |r| {
-        r.get().with(api::get_config);
-        r.put().with(api::put_config)
-    })
-    .resource("/config/{subject}", |r| {
-        r.get().with(api::get_subject_config);
-        r.put().with(api::put_subject_config)
-    })
-    .resource("/subjects", |r| r.get().with(api::get_subjects))
-    .resource("/subjects/{subject}", |r| {
-        r.post().with(api::post_subject);
-        r.delete().with(api::delete_subject)
-    })
-    .resource("/subjects/{subject}/versions", |r| {
-        r.get().with(api::get_subject_versions);
-        r.post().with(api::register_schema)
-    })
-    .resource("/subjects/{subject}/versions/latest", |r| {
-        r.get().with(api::get_subject_version_latest)
-        // TODO: r.delete().with(api::delete_schema_version_latest)
-    })
-    .resource("/subjects/{subject}/versions/{version}", |r| {
-        r.get().with(api::get_subject_version);
-        r.delete().with(api::delete_schema_version)
-    })
-    .resource("/subjects/{subject}/versions/latest/schema", |r| {
-        r.get().with(api::get_subject_version_latest_schema)
-    })
-    .resource("/subjects/{subject}/versions/{version}/schema", |r| {
-        r.get().with(api::get_subject_version_schema)
-    })
-    .resource("/schemas/ids/{id}", |r| r.get().with(api::get_schema))
+    App::with_state(state)
+        .middleware(Logger::default())
+        .middleware(middleware::VerifyAcceptHeader)
+        .middleware(middleware::VerifyAuthorization::new(&password))
+        .resource("/config", |r| {
+            r.get().with(api::get_config);
+            r.put().with(api::put_config)
+        })
+        .resource("/config/{subject}", |r| {
+            r.get().with(api::get_subject_config);
+            r.put().with(api::put_subject_config)
+        })
+        .resource("/subjects", |r| r.get().with(api::get_subjects))
+        .resource("/subjects/{subject}", |r| {
+            r.post().with(api::post_subject);
+            r.delete().with(api::delete_subject)
+        })
+        .resource("/subjects/{subject}/versions", |r| {
+            r.get().with(api::get_subject_versions);
+            r.post().with(api::register_schema)
+        })
+        .resource("/subjects/{subject}/versions/latest", |r| {
+            r.get().with(api::get_subject_version_latest)
+            // TODO: r.delete().with(api::delete_schema_version_latest)
+        })
+        .resource("/subjects/{subject}/versions/{version}", |r| {
+            r.get().with(api::get_subject_version);
+            r.delete().with(api::delete_schema_version)
+        })
+        .resource("/subjects/{subject}/versions/latest/schema", |r| {
+            r.get().with(api::get_subject_version_latest_schema)
+        })
+        .resource("/subjects/{subject}/versions/{version}/schema", |r| {
+            r.get().with(api::get_subject_version_schema)
+        })
+        .resource("/schemas/ids/{id}", |r| r.get().with(api::get_schema))
 }
