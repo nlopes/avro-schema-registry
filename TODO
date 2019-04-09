@@ -3,3 +3,4 @@
   - check error_chain!
 - [ ] password as bytes?
 - [ ] add /compatibility endpoint
+- [ ] change to basic auth to use the newly added basic_auth in actix-web (https://github.com/actix/actix-web/pull/540)
