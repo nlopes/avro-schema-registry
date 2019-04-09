@@ -6,10 +6,13 @@ use std::env;
 use std::error::Error;
 
 use actix_web::{server::HttpServer, Result};
+extern crate sentry;
 
 use avro_schema_registry::app;
 
 fn main() -> Result<(), Box<Error>> {
+    let _guard = sentry::init(env::var("SENTRY_URL")?);
+
     env::set_var("RUST_LOG", "actix_web=debug,avro_schema_registry=debug");
     env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
