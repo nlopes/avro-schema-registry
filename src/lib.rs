@@ -14,8 +14,8 @@ extern crate json;
 extern crate serde_derive;
 extern crate serde_json;
 
-pub mod app;
 pub mod api;
+pub mod app;
 pub mod db;
 pub mod health;
 pub mod middleware;

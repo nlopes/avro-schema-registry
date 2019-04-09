@@ -243,8 +243,6 @@ impl SchemaVersion {
         conn: &PgConnection,
         request: DeleteSchemaVersion,
     ) -> Result<i32, ApiError> {
-        use super::Subject;
-
         use super::schema::schema_versions::dsl::version;
 
         let (subject, v) = (request.subject, request.version);

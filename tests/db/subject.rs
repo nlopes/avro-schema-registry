@@ -7,7 +7,7 @@ pub fn create_test_subject_with_config(conn: &super::PgConnection, compat: &str)
     use avro_schema_registry::db::models::schema::configs::dsl::{
         compatibility, configs, created_at as config_created_at, subject_id,
         updated_at as config_updated_at,
-    }; ;
+    };
     use avro_schema_registry::db::models::schema::subjects::dsl::*;
 
     conn.transaction::<_, diesel::result::Error, _>(|| {
@@ -33,8 +33,6 @@ pub fn create_test_subject_with_config(conn: &super::PgConnection, compat: &str)
 }
 
 pub fn add(conn: &super::PgConnection, subjects: Vec<String>) {
-    use avro_schema_registry::db::models::Subject;
-
     conn.transaction::<String, ApiError, _>(|| {
         Ok(subjects
             .into_iter()

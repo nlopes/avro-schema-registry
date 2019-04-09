@@ -14,7 +14,7 @@ impl Handler<GetSubjects> for ConnectionPooler {
     fn handle(&mut self, _: GetSubjects, _: &mut Self::Context) -> Self::Result {
         let conn = self.connection()?;
 
-        Subject::distinct_names(&conn).map(|names| SubjectList { content: names })
+        Subject::distinct_names(&conn).map(|content| SubjectList { content })
     }
 }
 
@@ -24,7 +24,7 @@ impl Handler<GetSubjectVersions> for ConnectionPooler {
     fn handle(&mut self, subject_query: GetSubjectVersions, _: &mut Self::Context) -> Self::Result {
         let conn = self.connection()?;
         SchemaVersion::versions_with_subject_name(&conn, subject_query.subject)
-            .map(|versions| SubjectVersionsResponse { versions: versions })
+            .map(|versions| SubjectVersionsResponse { versions })
     }
 }
 
@@ -34,7 +34,7 @@ impl Handler<DeleteSubject> for ConnectionPooler {
     fn handle(&mut self, query: DeleteSubject, _: &mut Self::Context) -> Self::Result {
         let conn = self.connection()?;
         Subject::delete_by_name(&conn, query.subject)
-            .map(|versions| DeleteSubjectResponse { versions: versions })
+            .map(|versions| DeleteSubjectResponse { versions })
     }
 }
 

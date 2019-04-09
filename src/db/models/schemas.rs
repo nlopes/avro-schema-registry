@@ -141,7 +141,7 @@ impl Schema {
         // TODO: we use the same in both fields. This means we don't do the same as
         // salsify
         let new_schema = NewSchema {
-            json: json,
+            json,
             fingerprint: fingerprint.to_owned(),
             fingerprint2: Some(fingerprint.to_owned()),
             created_at: Utc::now().naive_utc(),
