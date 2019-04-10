@@ -15,9 +15,9 @@ impl<S> Middleware<S> for VerifyAcceptHeader {
             .map_err(ErrorBadRequest)?;
 
         match accept_content_type {
-            "application/vnd.schemaregistry+json" => Ok(Started::Done),
-            "application/vnd.schemaregistry.v1+json" => Ok(Started::Done),
-            "application/json" => Ok(Started::Done),
+            "application/vnd.schemaregistry+json"
+            | "application/vnd.schemaregistry.v1+json"
+            | "application/json" => Ok(Started::Done),
             _ => Err(ErrorBadRequest(ParseError::Header)),
         }
     }
