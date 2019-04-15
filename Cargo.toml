@@ -16,7 +16,7 @@ test = false
 doc = false
 
 [dependencies]
-actix = "0.7"
+actix = "0.8"
 actix-web = "0.7"
 avro-rs = "0.6"
 base64 = "0.10"
