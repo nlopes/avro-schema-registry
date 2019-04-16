@@ -1,31 +1,33 @@
-use actix_web::{AsyncResponder, FutureResponse, HttpResponse, Json, Path, State};
-use futures::future::Future;
+use actix_web::{
+    web::{Data, Json, Path},
+    Error, HttpResponse,
+};
+
+use futures::Future;
 
 use crate::app::AppState;
 use crate::db::models::{GetConfig, GetSubjectConfig, SetConfig, SetSubjectConfig};
 
-pub fn get_config(state: State<AppState>) -> FutureResponse<HttpResponse> {
+pub fn get_config(data: Data<AppState>) -> impl Future<Item = HttpResponse, Error = Error> {
     info!("path=/config,method=get");
 
-    state
-        .db
+    data.db
         .send(GetConfig {})
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
             Err(e) => Ok(e.http_response()),
         })
-        .responder()
 }
 
 pub fn put_config(
-    (body, state): (Json<SetConfig>, State<AppState>),
-) -> FutureResponse<HttpResponse> {
+    body: Json<SetConfig>,
+    data: Data<AppState>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
     let compatibility = body.compatibility;
     info!("method=put,compatibility={}", compatibility);
 
-    state
-        .db
+    data.db
         .send(SetConfig {
             compatibility: compatibility,
         })
@@ -34,25 +36,23 @@ pub fn put_config(
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
             Err(e) => Ok(e.http_response()),
         })
-        .responder()
 }
 
 /// Get compatibility level for a subject.
 pub fn get_subject_config(
-    (subject_path, state): (Path<String>, State<AppState>),
-) -> FutureResponse<HttpResponse> {
+    subject_path: Path<String>,
+    data: Data<AppState>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
     let subject = subject_path.into_inner();
     info!("method=get,subject={}", subject);
 
-    state
-        .db
+    data.db
         .send(GetSubjectConfig { subject: subject })
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
             Err(e) => Ok(e.http_response()),
         })
-        .responder()
 }
 
 /// Update compatibility level for the specified subject.
@@ -62,8 +62,10 @@ pub fn get_subject_config(
 /// internally to subject_id's therefore, we can *and will* return "Schema not found" if
 /// no subject is found with the given name.
 pub fn put_subject_config(
-    (subject_path, body, state): (Path<String>, Json<SetConfig>, State<AppState>),
-) -> FutureResponse<HttpResponse> {
+    subject_path: Path<String>,
+    body: Json<SetConfig>,
+    data: Data<AppState>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
     let subject = subject_path.into_inner();
     let compatibility = body.compatibility;
     info!(
@@ -71,8 +73,7 @@ pub fn put_subject_config(
         subject, compatibility
     );
 
-    state
-        .db
+    data.db
         .send(SetSubjectConfig {
             subject: subject,
             compatibility: compatibility,
@@ -82,5 +83,4 @@ pub fn put_subject_config(
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
             Err(e) => Ok(e.http_response()),
         })
-        .responder()
 }

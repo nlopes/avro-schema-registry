@@ -1,6 +1,6 @@
 use std::env;
 
-use actix_web::actix::{Actor, Addr, SyncArbiter, SyncContext};
+use actix::{Actor, Addr, SyncArbiter, SyncContext};
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 

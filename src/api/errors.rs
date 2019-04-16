@@ -142,6 +142,8 @@ impl ApiError {
     }
 }
 
+impl actix_web::ResponseError for ApiErrorCode {}
+
 impl std::error::Error for ApiErrorCode {
     fn description(&self) -> &str {
         self.message()

@@ -1,6 +1,7 @@
 use actix::Handler;
 
-use crate::api::errors::ApiError;
+use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::app::VersionLimit;
 
 use super::{
     ConnectionPooler, DeleteSchemaVersion, GetSchema, GetSubjectVersionResponse, RegisterSchema,
@@ -19,7 +20,7 @@ impl Handler<GetSchema> for ConnectionPooler {
 }
 
 impl Handler<DeleteSchemaVersion> for ConnectionPooler {
-    type Result = Result<i32, ApiError>;
+    type Result = Result<u32, ApiError>;
 
     fn handle(
         &mut self,
@@ -27,6 +28,9 @@ impl Handler<DeleteSchemaVersion> for ConnectionPooler {
         _: &mut Self::Context,
     ) -> Self::Result {
         let conn = self.connection()?;
+        if !delete_schema_version.version.within_limits() {
+            return Err(ApiError::new(ApiErrorCode::InvalidVersion));
+        }
         SchemaVersion::delete_version_with_subject(&conn, delete_schema_version)
     }
 }

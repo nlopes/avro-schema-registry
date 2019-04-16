@@ -155,7 +155,7 @@ impl SchemaVersion {
     pub fn get_schema_id(
         conn: &PgConnection,
         subject_name: String,
-        schema_version: i32,
+        schema_version: u32,
     ) -> Result<(i64, i32, String), ApiError> {
         use super::schema::schema_versions::dsl::{
             schema_id, schema_versions, subject_id, version,
@@ -167,7 +167,7 @@ impl SchemaVersion {
 
             let schema_id_result = match schema_versions
                 .filter(subject_id.eq(subject.id))
-                .filter(version.eq(Some(schema_version)))
+                .filter(version.eq(Some(schema_version as i32)))
                 .select(schema_id)
                 .first(conn)
             {
@@ -242,19 +242,19 @@ impl SchemaVersion {
     pub fn delete_version_with_subject(
         conn: &PgConnection,
         request: DeleteSchemaVersion,
-    ) -> Result<i32, ApiError> {
+    ) -> Result<u32, ApiError> {
         use super::schema::schema_versions::dsl::version;
 
         let (subject, v) = (request.subject, request.version);
 
         conn.transaction::<_, ApiError, _>(|| {
             Subject::get_by_name(conn, subject.to_owned()).and_then(|subject| {
-                diesel::delete(SchemaVersion::belonging_to(&subject).filter(version.eq(v)))
+                diesel::delete(SchemaVersion::belonging_to(&subject).filter(version.eq(v as i32)))
                     .execute(conn)
                     .or_else(|_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))
                     .and_then(|o| match o {
                         0 => Err(ApiError::new(ApiErrorCode::VersionNotFound)),
-                        _ => Ok(v),
+                        _ => Ok(v as u32),
                     })
             })
         })
@@ -263,9 +263,9 @@ impl SchemaVersion {
 
 pub struct DeleteSchemaVersion {
     pub subject: String,
-    pub version: i32,
+    pub version: u32,
 }
 
 impl Message for DeleteSchemaVersion {
-    type Result = Result<i32, ApiError>;
+    type Result = Result<u32, ApiError>;
 }

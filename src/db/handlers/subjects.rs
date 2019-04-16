@@ -1,6 +1,7 @@
 use actix::Handler;
 
-use crate::api::errors::ApiError;
+use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::app::VersionLimit;
 
 use super::{
     ConnectionPooler, DeleteSubject, DeleteSubjectResponse, GetSubjectVersion,
@@ -13,7 +14,6 @@ impl Handler<GetSubjects> for ConnectionPooler {
 
     fn handle(&mut self, _: GetSubjects, _: &mut Self::Context) -> Self::Result {
         let conn = self.connection()?;
-
         Subject::distinct_names(&conn).map(|content| SubjectList { content })
     }
 }
@@ -44,7 +44,12 @@ impl Handler<GetSubjectVersion> for ConnectionPooler {
     fn handle(&mut self, query: GetSubjectVersion, _: &mut Self::Context) -> Self::Result {
         let conn = self.connection()?;
         match query.version {
-            Some(v) => SchemaVersion::get_schema_id(&conn, query.subject.to_string(), v as i32),
+            Some(v) => {
+                if !v.within_limits() {
+                    return Err(ApiError::new(ApiErrorCode::InvalidVersion));
+                }
+                SchemaVersion::get_schema_id(&conn, query.subject.to_string(), v)
+            }
             None => SchemaVersion::get_schema_id_from_latest(&conn, query.subject.to_string()),
         }
         .map(|o| GetSubjectVersionResponse {
