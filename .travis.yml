@@ -10,6 +10,6 @@ env: >
 services:
   - postgresql
 before_script:
-  - cargo install diesel_cli
+  - which diesel || cargo install diesel_cli
   - diesel setup
   - diesel migration run 
