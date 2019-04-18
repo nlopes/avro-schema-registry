@@ -86,7 +86,7 @@ impl SchemaVersion {
             .map_or_else(
                 |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
                 |versions| {
-                    if versions.len() == 0 {
+                    if versions.is_empty() {
                         Err(ApiError::new(ApiErrorCode::SubjectNotFound))
                     } else {
                         Ok(versions)
@@ -98,18 +98,22 @@ impl SchemaVersion {
     pub fn latest_version_with_subject_name(
         conn: &PgConnection,
         subject_name: String,
-    ) -> Result<Option<Option<i32>>, ApiError> {
+    ) -> Result<Option<i32>, ApiError> {
         use super::schema::schema_versions::dsl::{schema_versions, subject_id, version};
         use super::schema::subjects::dsl::{id as subjects_id, name, subjects};
 
-        schema_versions
+        let res = schema_versions
             .inner_join(subjects.on(subject_id.eq(subjects_id)))
             .filter(name.eq(&subject_name))
             .select(version)
             .order(version.desc())
-            .first::<Option<i32>>(conn)
-            .optional()
-            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+            .first::<Option<i32>>(conn);
+
+        match res {
+            Ok(v) => Ok(v),
+            Err(diesel::NotFound) => Ok(None),
+            _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+        }
     }
 
     pub fn get_schema_id_from_latest(
@@ -206,12 +210,9 @@ impl SchemaVersion {
                 .load::<SchemaVersion>(conn)?
                 .into_iter()
                 .map(|entry| {
-                    match entry.delete(&conn) {
-                        Err(e) => {
-                            info!("error deleting: {}", e);
-                        }
-                        _ => (),
-                    };
+                    if let Err(e) = entry.delete(&conn) {
+                        info!("error deleting: {}", e);
+                    }
                     entry.version
                 })
                 .collect())

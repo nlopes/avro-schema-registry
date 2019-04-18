@@ -28,9 +28,7 @@ pub fn put_config(
     info!("method=put,compatibility={}", compatibility);
 
     data.db
-        .send(SetConfig {
-            compatibility: compatibility,
-        })
+        .send(SetConfig { compatibility })
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
@@ -47,7 +45,7 @@ pub fn get_subject_config(
     info!("method=get,subject={}", subject);
 
     data.db
-        .send(GetSubjectConfig { subject: subject })
+        .send(GetSubjectConfig { subject })
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
@@ -75,8 +73,8 @@ pub fn put_subject_config(
 
     data.db
         .send(SetSubjectConfig {
-            subject: subject,
-            compatibility: compatibility,
+            subject,
+            compatibility,
         })
         .from_err()
         .and_then(|res| match res {

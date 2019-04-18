@@ -65,7 +65,7 @@ impl Subject {
         SchemaVersion::delete_subject_with_name(&conn, subject_name).map_or_else(
             |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
             |res| {
-                if res.len() != 0 {
+                if !res.is_empty() {
                     Ok(res)
                 } else {
                     Err(ApiError::new(ApiErrorCode::SubjectNotFound))

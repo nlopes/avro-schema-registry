@@ -114,9 +114,9 @@ impl ApiError {
         message: Option<String>,
     ) -> Self {
         ApiError {
-            status_code: status_code,
+            status_code,
             response: ApiErrorResponse {
-                error_code: error_code,
+                error_code,
                 message: if let Some(extra) = message {
                     format!("{}: {}", error_code.message(), extra)
                 } else {

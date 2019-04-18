@@ -76,8 +76,8 @@ impl CompatibilityLevel {
     ///
     /// [`Ok`]: enum.Result.html#variant.Ok
     /// [`Err`]: enum.Result.html#variant.Err
-    pub fn valid(&self) -> Result<CompatibilityLevel, ApiError> {
-        ConfigCompatibility::new(self.to_string()).and(Ok(*self))
+    pub fn valid(self) -> Result<CompatibilityLevel, ApiError> {
+        ConfigCompatibility::new(self.to_string()).and(Ok(self))
     }
 }
 
@@ -140,7 +140,7 @@ impl Config {
             // probably could) and instead return an internal server error.
             Ok(config) => config
                 .compatibility
-                .ok_or(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
             Err(diesel::result::Error::NotFound) => {
                 // If we didn't find an entry with id 0, then this is either:
                 //
@@ -165,7 +165,7 @@ impl Config {
             // probably could) and instead return an internal server error.
             Ok(config) => config
                 .compatibility
-                .ok_or(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
             _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
         }
     }
@@ -186,7 +186,7 @@ impl Config {
                 {
                     Ok(conf) => conf
                         .compatibility
-                        .ok_or(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                        .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
                     _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
                 }
             }
@@ -199,7 +199,7 @@ impl Config {
                         subject_id.eq(subject.id),
                     ))
                     .execute(conn)
-                    .or(Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))?;
+                    .or_else(|_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))?;
                 Ok(compat)
             }
             _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
@@ -218,7 +218,7 @@ impl Config {
         {
             Ok(config) => config
                 .compatibility
-                .ok_or(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
             Err(diesel::result::Error::NotFound) => {
                 // If we didn't find an entry with id 0, then this is either:
                 //
@@ -242,6 +242,6 @@ impl Config {
                 updated_at.eq(diesel::dsl::now),
             ))
             .execute(conn)
-            .or(Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))
+            .or_else(|_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))
     }
 }

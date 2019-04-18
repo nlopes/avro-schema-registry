@@ -94,14 +94,8 @@ impl Schema {
         subject_name: String,
         db_schema: Option<Schema>,
     ) -> Result<Schema, ApiError> {
-        let optional_version =
+        let latest =
             SchemaVersion::latest_version_with_subject_name(conn, subject_name.to_owned())?;
-
-        let latest = if let Some(l) = optional_version {
-            l
-        } else {
-            None
-        };
 
         // If it already exists, we don't care, we just update and get the subject.
         let subject = Subject::insert(conn, subject_name)?;
@@ -111,7 +105,8 @@ impl Schema {
                 // https://github.com/flavray/avro-rs
                 let sch = match json {
                     Some(j) => Schema::new(conn, j, fingerprint)?,
-                    None => db_schema.ok_or(ApiError::new(ApiErrorCode::BackendDatastoreError))?,
+                    None => db_schema
+                        .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError))?,
                 };
                 (sch, latest_version + 1)
             }
@@ -119,7 +114,8 @@ impl Schema {
                 // Create schema version for subject
                 let sch = match json {
                     Some(j) => Schema::new(conn, j, fingerprint)?,
-                    None => db_schema.ok_or(ApiError::new(ApiErrorCode::BackendDatastoreError))?,
+                    None => db_schema
+                        .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError))?,
                 };
                 (sch, 1)
             }
@@ -164,7 +160,7 @@ impl Schema {
         schemas
             .filter(json.eq(data))
             .get_result::<Schema>(conn)
-            .or(Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
+            .or_else(|_| Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
     }
 
     pub fn get_by_id(conn: &PgConnection, schema_id: i64) -> Result<Schema, ApiError> {
@@ -172,7 +168,7 @@ impl Schema {
         schemas
             .find(schema_id)
             .get_result::<Schema>(conn)
-            .or(Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
+            .or_else(|_| Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
     }
 
     pub fn verify_registration(
