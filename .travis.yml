@@ -9,7 +9,10 @@ env: >
 
 services:
   - postgresql
+addons:
+  postgresql: "9.6"
+
 before_script:
   - which diesel || cargo install diesel_cli
   - diesel setup
-  - diesel migration run 
+  - diesel migration run
