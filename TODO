@@ -1,0 +1,11 @@
+- [ ] all errors (low level included) propagate as api errors
+  - this looks weird and shouldn't be done this way, it was just easier to move quickly - fix it
+  - check error_chain!
+- [ ] add /compatibility endpoint
+- [ ] test get_subject_version_schema (currently we assume copy&paste so we only test the
+  other path)
+- [ ] make sure we check for avro compatibility when registering (https://docs.confluent.io/current/schema-registry/develop/api.html#post--subjects-(string-%20subject)-versions)
+
+* Notes
+  We don't do error 50003 because we don't use Kafka as a backend:
+  - Error code 50003 -- Error while forwarding the request to the master
