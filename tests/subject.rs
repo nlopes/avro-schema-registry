@@ -3,18 +3,16 @@ use speculate::speculate;
 
 use avro_schema_registry::api::SchemaBody;
 
-use crate::common::request::TestRequest;
+use crate::common::server::{ApiTester, ApiTesterServer};
 use crate::db;
-use crate::server::TestServer;
 
 speculate! {
     before {
         let conn = db::connection::connection();
-        let server = TestServer::start();
+        let server = ApiTesterServer::new();
     }
 
     after {
-        server.stop();
         db::cleanup::reset(&conn);
     }
 
@@ -25,10 +23,7 @@ speculate! {
 
         context "without subjects" {
             it "returns empty list" {
-                TestRequest::new(http::Method::GET, "/subjects", None)
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("[]")
-                    .assert();
+                server.test(http::Method::GET, "/subjects", None, http::StatusCode::OK, "[]");
             }
         }
 
@@ -38,21 +33,20 @@ speculate! {
             }
 
             it "returns list of subjects" {
-                TestRequest::new(http::Method::GET, "/subjects", None)
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("[\"subject1\",\"subject2\"]")
-                    .assert();
+                server.test(http::Method::GET, "/subjects", None,
+                            http::StatusCode::OK,
+                            "[\"subject1\",\"subject2\"]");
             }
         }
+
     }
 
     describe "get versions under subject" {
         context "without subject" {
             it "returns 404 with 'Subject not found'" {
-                TestRequest::new(http::Method::GET, "/subjects/test.subject/versions", None)
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                    .assert();
+                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
             }
         }
 
@@ -67,10 +61,9 @@ speculate! {
 
             // This should never happen with correct usage of the API
             it "returns 404 with 'Subject not found'" {
-                TestRequest::new(http::Method::GET, "/subjects/test.subject/versions", None)
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                    .assert();
+                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
             }
         }
 
@@ -78,31 +71,26 @@ speculate! {
             before {
                 let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
                 let schema = SchemaBody{schema: schema_s};
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
+                            http::StatusCode::OK, "");
             }
 
             it "returns list of one" {
-                TestRequest::new(http::Method::GET, "/subjects/test.subject/versions", None)
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("[1]") // TODO(nlopes): dangerous, postgresql can pick any other ID
-                    .assert();
+                // TODO(nlopes): dangerous, postgresql can pick any other ID
+                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
+                    http::StatusCode::OK, "[1]");
             }
 
             it "returns list of many" {
                 let schema2_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
                 let schema2 = SchemaBody{schema: schema2_s};
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema2)))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("")
-                    .assert();
 
-                TestRequest::new(http::Method::GET, "/subjects/test.subject/versions", None)
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("[1,2]")
-                    .assert();
+                // This modifies the database state in preparation for the next request
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema2)),
+                    http::StatusCode::OK, "");
+
+                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
+                            http::StatusCode::OK, "[1,2]");
             }
         }
     }
@@ -110,10 +98,9 @@ speculate! {
     describe "delete subject" {
         context "without subject" {
             it "returns 404 with 'Subject not found'" {
-                TestRequest::new(http::Method::DELETE, "/subjects/test.subject", None)
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                    .assert();
+                server.test(http::Method::DELETE, "/subjects/test.subject", None,
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
             }
         }
 
@@ -121,17 +108,13 @@ speculate! {
             before {
                 let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
                 let schema = SchemaBody{schema: schema_s};
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
+                            http::StatusCode::OK, "");
             }
 
             it "returns list with versions of schemas deleted" {
-                TestRequest::new(http::Method::DELETE, "/subjects/test.subject", None)
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("[1]")
-                    .assert();
+                server.test(http::Method::DELETE, "/subjects/test.subject", None,
+                            http::StatusCode::OK, "[1]");
             }
         }
     }
@@ -139,10 +122,9 @@ speculate! {
     describe "get version of schema registered under subject" {
         context "without subject" {
             it "returns 404 with 'Subject not found'" {
-                TestRequest::new(http::Method::GET, "/subjects/test.subject/versions/1", None)
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                    .assert();
+                server.test(http::Method::GET, "/subjects/test.subject/versions/1", None,
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
             }
         }
 
@@ -150,34 +132,29 @@ speculate! {
             before {
                 let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
                 let schema = SchemaBody{schema: schema_s};
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
+                            http::StatusCode::OK, "");
             }
 
             context "with non existing version" {
                 it "returns 404 with 'Version not found'" {
-                    TestRequest::new(http::Method::GET, "/subjects/test.subject/versions/2", None)
-                        .expects_status(http::StatusCode::NOT_FOUND)
-                        .expects_body("{\"error_code\":40402,\"message\":\"Version not found\"}")
-                        .assert();
+                    server.test(http::Method::GET, "/subjects/test.subject/versions/2", None,
+                                http::StatusCode::NOT_FOUND,
+                                "{\"error_code\":40402,\"message\":\"Version not found\"}");
                 }
             }
 
             context "with version out of bounds" {
                 it "returns 422 with 'Invalid version' for lower bound" {
-                    TestRequest::new(http::Method::GET, "/subjects/test.subject/versions/0", None)
-                        .expects_status(http::StatusCode::UNPROCESSABLE_ENTITY)
-                        .expects_body("{\"error_code\":42202,\"message\":\"Invalid version\"}")
-                        .assert();
+                    server.test(http::Method::GET, "/subjects/test.subject/versions/0", None,
+                                http::StatusCode::UNPROCESSABLE_ENTITY,
+                                "{\"error_code\":42202,\"message\":\"Invalid version\"}");
                 }
 
                 it "returns 422 with 'Invalid version' for upper bound" {
-                    TestRequest::new(http::Method::GET, "/subjects/test.subject/versions/2147483648", None)
-                        .expects_status(http::StatusCode::UNPROCESSABLE_ENTITY)
-                        .expects_body("{\"error_code\":42202,\"message\":\"Invalid version\"}")
-                        .assert();
+                    server.test(http::Method::GET, "/subjects/test.subject/versions/2147483648", None,
+                                http::StatusCode::UNPROCESSABLE_ENTITY,
+                                "{\"error_code\":42202,\"message\":\"Invalid version\"}");
                 }
             }
 
@@ -188,10 +165,8 @@ speculate! {
                     //
                     //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
 
-                    TestRequest::new(http::Method::GET, "/subjects/test.subject/versions/latest", None)
-                        .expects_status(http::StatusCode::OK)
-                        .expects_body("")
-                        .assert();
+                    server.test(http::Method::GET, "/subjects/test.subject/versions/latest", None,
+                                http::StatusCode::OK, "");
                 }
             }
 
@@ -202,10 +177,9 @@ speculate! {
                     //
                     //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
 
-                    TestRequest::new(http::Method::GET, "/subjects/test.subject/versions/1", None)
-                        .expects_status(http::StatusCode::OK)
-                        .expects_body("")
-                        .assert();
+                    server.test(http::Method::GET, "/subjects/test.subject/versions/1", None,
+                                http::StatusCode::OK, "");
+
                 }
             }
         }
@@ -218,10 +192,8 @@ speculate! {
                 let schema = SchemaBody{schema: schema_s};
 
                 // TODO(nlopes): Check for body "{\"id\":\"147\"}"
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
+                            http::StatusCode::OK, "");
             }
         }
 
@@ -229,10 +201,9 @@ speculate! {
             it "returns 422 with 'Invalid Avro schema'" {
                 let schema = SchemaBody{schema: "{}".to_string()};
 
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)))
-                    .expects_status(http::StatusCode::UNPROCESSABLE_ENTITY)
-                        .expects_body("{\"error_code\":42201,\"message\":\"Invalid Avro schema\"}")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
+                            http::StatusCode::UNPROCESSABLE_ENTITY,
+                            "{\"error_code\":42201,\"message\":\"Invalid Avro schema\"}");
             }
         }
     }
@@ -245,10 +216,9 @@ speculate! {
 
         context "without subject" {
             it "returns 404 with 'Subject not found'" {
-                TestRequest::new(http::Method::POST, "/subjects/test.subject", Some(json!(schema)))
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject", Some(json!(schema)),
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
             }
         }
 
@@ -256,17 +226,14 @@ speculate! {
             before {
                 let schema2_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
                 let schema2 = SchemaBody{schema: schema2_s};
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema2)))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema2)),
+                            http::StatusCode::OK, "");
             }
 
             it "returns 404 with Subject not found" {
-                TestRequest::new(http::Method::POST, "/subjects/test.subject", Some(json!(schema)))
-                     .expects_status(http::StatusCode::NOT_FOUND)
-                     .expects_body("{\"error_code\":40403,\"message\":\"Schema not found\"}")
-                     .assert();
+                server.test(http::Method::POST, "/subjects/test.subject", Some(json!(schema)),
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40403,\"message\":\"Schema not found\"}");
             }
         }
     }
@@ -274,10 +241,9 @@ speculate! {
     describe "delete schema version under subject" {
         context "without subject" {
             it "returns 404 with 'Subject not found'" {
-                TestRequest::new(http::Method::DELETE, "/subjects/test.subject/versions/1", None)
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                    .assert();
+                server.test(http::Method::DELETE, "/subjects/test.subject/versions/1", None,
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
             }
         }
 
@@ -285,36 +251,30 @@ speculate! {
             before {
                 let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
                 let schema = SchemaBody{schema: schema_s};
-                TestRequest::new(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("")
-                    .assert();
+                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
+                    http::StatusCode::OK, "");
             }
 
             context "with non existing version" {
                 it "returns 404 with 'Version not found'" {
-                    TestRequest::new(http::Method::DELETE, "/subjects/test.subject/versions/2", None)
-                        .expects_status(http::StatusCode::NOT_FOUND)
-                        .expects_body("{\"error_code\":40402,\"message\":\"Version not found\"}")
-                        .assert();
+                    server.test(http::Method::DELETE, "/subjects/test.subject/versions/2", None,
+                                http::StatusCode::NOT_FOUND,
+                                "{\"error_code\":40402,\"message\":\"Version not found\"}");
                 }
             }
 
             context "with version out of bounds" {
                 it "returns 422 with 'Invalid version'" {
-                    TestRequest::new(http::Method::DELETE, "/subjects/test.subject/versions/0", None)
-                        .expects_status(http::StatusCode::UNPROCESSABLE_ENTITY)
-                        .expects_body("{\"error_code\":42202,\"message\":\"Invalid version\"}")
-                        .assert();
+                    server.test(http::Method::DELETE, "/subjects/test.subject/versions/0", None,
+                                http::StatusCode::UNPROCESSABLE_ENTITY,
+                                "{\"error_code\":42202,\"message\":\"Invalid version\"}");
                 }
             }
 
             context "with existing version" {
                 it "returns list with versions of schemas deleted" {
-                    TestRequest::new(http::Method::DELETE, "/subjects/test.subject/versions/1", None)
-                        .expects_status(http::StatusCode::OK)
-                        .expects_body("1")
-                        .assert();
+                    server.test(http::Method::DELETE, "/subjects/test.subject/versions/1", None,
+                                http::StatusCode::OK, "1");
                 }
             }
         }

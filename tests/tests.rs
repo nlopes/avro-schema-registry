@@ -5,5 +5,4 @@ mod common;
 mod config;
 mod db;
 mod schemas;
-mod server;
 mod subject;

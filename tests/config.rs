@@ -1,47 +1,41 @@
 use actix_web::http;
 use speculate::speculate;
 
-use crate::common::request::TestRequest;
+use crate::common::server::{ApiTester, ApiTesterServer};
 use crate::db;
-use crate::server::TestServer;
 
 speculate! {
     before {
         let conn = db::connection::connection();
-        let server = TestServer::start();
+        let server = ApiTesterServer::new();
     }
 
     after {
-        server.stop();
         db::cleanup::reset(&conn);
     }
 
 
     describe "get global config" {
         it "returns BACKWARD" {
-            TestRequest::new(http::Method::GET, "/config", None)
-                .expects_status(http::StatusCode::OK)
-                .expects_body("{\"compatibility\":\"BACKWARD\"}")
-                .assert();
+            server.test(http::Method::GET, "/config", None,
+                        http::StatusCode::OK, "{\"compatibility\":\"BACKWARD\"}");
         }
     }
 
     describe "set global config" {
         context "with valid compatibility FULL" {
             it "returns FULL" {
-                TestRequest::new(http::Method::PUT, "/config", Some(json!({"compatibility": "FULL"})))
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("{\"compatibility\":\"FULL\"}")
-                    .assert();
+                server.test(http::Method::PUT, "/config", Some(json!({"compatibility": "FULL"})),
+                            http::StatusCode::OK,
+                            "{\"compatibility\":\"FULL\"}");
             }
         }
 
         context "with invalid compatibility" {
             it "returns 422 with Invalid compatibility level" {
-                TestRequest::new(http::Method::PUT, "/config", Some(json!({"compatibility": "NOT_VALID"})))
-                    .expects_status(http::StatusCode::UNPROCESSABLE_ENTITY)
-                    .expects_body("{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}")
-                    .assert();
+                server.test(http::Method::PUT, "/config", Some(json!({"compatibility": "NOT_VALID"})),
+                            http::StatusCode::UNPROCESSABLE_ENTITY,
+                            "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}");
             }
         }
     }
@@ -53,19 +47,16 @@ speculate! {
             }
 
             it "returns valid compatibility" {
-                TestRequest::new(http::Method::GET, "/config/test.subject", None)
-                    .expects_status(http::StatusCode::OK)
-                    .expects_body("{\"compatibility\":\"FULL\"}")
-                    .assert();
+                server.test(http::Method::GET, "/config/test.subject", None,
+                            http::StatusCode::OK, "{\"compatibility\":\"FULL\"}");
             }
         }
 
         context "non existent subject" {
             it "returns 404 with Invalid compatibility level" {
-                TestRequest::new(http::Method::GET, "/config/test.subject", None)
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                    .assert();
+                server.test(http::Method::GET, "/config/test.subject", None,
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
             }
         }
     }
@@ -78,23 +69,19 @@ speculate! {
 
             context "with valid compatibility FORWARD_TRANSITIVE" {
                 it "returns FORWARD_TRANSITIVE" {
-                    TestRequest::new(http::Method::PUT,
-                                     "/config/test.subject",
-                                     Some(json!({"compatibility": "FORWARD_TRANSITIVE"})))
-                        .expects_status(http::StatusCode::OK)
-                        .expects_body("{\"compatibility\":\"FORWARD_TRANSITIVE\"}")
-                        .assert();
+                    server.test(http::Method::PUT, "/config/test.subject",
+                                Some(json!({"compatibility": "FORWARD_TRANSITIVE"})),
+                                http::StatusCode::OK,
+                                "{\"compatibility\":\"FORWARD_TRANSITIVE\"}");
                 }
             }
 
             context "with invalid compatibility" {
                 it "returns 422" {
-                    TestRequest::new(http::Method::PUT,
-                                     "/config/test.subject",
-                                     Some(json!({"compatibility": "NOT_VALID"})))
-                        .expects_status(http::StatusCode::UNPROCESSABLE_ENTITY)
-                        .expects_body("{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}")
-                        .assert();
+                    server.test(http::Method::PUT, "/config/test.subject",
+                                Some(json!({"compatibility": "NOT_VALID"})),
+                                http::StatusCode::UNPROCESSABLE_ENTITY,
+                                "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}");
                 }
             }
         }
@@ -102,12 +89,10 @@ speculate! {
         describe "non existing subject" {
             context "with valid compatibility FULL" {
                 it "returns 404" {
-                    TestRequest::new(http::Method::PUT,
-                                     "/config/test.subject",
-                                     Some(json!({"compatibility": "FULL"})))
-                        .expects_status(http::StatusCode::NOT_FOUND)
-                        .expects_body("{\"error_code\":40401,\"message\":\"Subject not found\"}")
-                        .assert();
+                    server.test(http::Method::PUT, "/config/test.subject",
+                                Some(json!({"compatibility": "FULL"})),
+                                http::StatusCode::NOT_FOUND,
+                                "{\"error_code\":40401,\"message\":\"Subject not found\"}");
                 }
             }
         }

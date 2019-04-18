@@ -4,18 +4,16 @@ use speculate::speculate;
 
 use avro_schema_registry::api::SchemaBody;
 
-use crate::common::request::TestRequest;
+use crate::common::server::{ApiTester, ApiTesterServer};
 use crate::db;
-use crate::server::TestServer;
 
 speculate! {
     before {
         let conn = db::connection::connection();
-        let server = TestServer::start();
+        let server = ApiTesterServer::new();
     }
 
     after {
-        server.stop();
         db::cleanup::reset(&conn);
     }
 
@@ -27,10 +25,9 @@ speculate! {
 
         context "without schema" {
             it "returns empty list" {
-                TestRequest::new(http::Method::GET, "/schemas/ids/1", None)
-                    .expects_status(http::StatusCode::NOT_FOUND)
-                    .expects_body("{\"error_code\":40403,\"message\":\"Schema not found\"}")
-                    .assert();
+                server.test(http::Method::GET, "/schemas/ids/1", None,
+                            http::StatusCode::NOT_FOUND,
+                            "{\"error_code\":40403,\"message\":\"Schema not found\"}");
             }
         }
 
@@ -43,10 +40,9 @@ speculate! {
             }
 
             it "returns schema" {
-                TestRequest::new(http::Method::GET, &format!("/schemas/ids/{}", schema.id), None)
-                         .expects_status(http::StatusCode::OK)
-                         .expects_body(&serde_json::to_string(&sch).unwrap())
-                         .assert();
+                server.test(http::Method::GET, &format!("/schemas/ids/{}", schema.id), None,
+                                 http::StatusCode::OK,
+                                 &serde_json::to_string(&sch).unwrap());
                  }
         }
     }
