@@ -18,11 +18,6 @@ speculate! {
     }
 
     describe "get schema" {
-        before {
-            db::subject::reset(&conn);
-            db::schema::reset(&conn);
-        }
-
         context "without schema" {
             it "returns empty list" {
                 server.test(http::Method::GET, "/schemas/ids/1", None,
@@ -33,7 +28,6 @@ speculate! {
 
         context "with schema" {
             before {
-                db::subject::add(&conn, vec![String::from("subject1")]);
                 let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
                 let schema = db::subject::register_schema(&conn, String::from("subject1"), schema_s.to_string());
                 let sch = SchemaBody{schema: schema_s};
