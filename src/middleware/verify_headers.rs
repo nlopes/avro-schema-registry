@@ -5,7 +5,7 @@ use actix_web::{
     http,
 };
 use futures::future::{ok, Either, FutureResult};
-use futures::{Future, Poll};
+use futures::Poll;
 
 pub struct VerifyAcceptHeader;
 
@@ -56,10 +56,7 @@ where
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
     type Error = S::Error;
-    type Future = Either<
-        FutureResult<Self::Response, Self::Error>,
-        Box<Future<Item = Self::Response, Error = Self::Error>>,
-    >;
+    type Future = Either<FutureResult<Self::Response, Self::Error>, S::Future>;
 
     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
         self.service.poll_ready()
@@ -67,7 +64,7 @@ where
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         if VerifyAcceptHeader::is_valid(req.headers()) {
-            return Either::B(Box::new(self.service.call(req)));
+            return Either::B(self.service.call(req));
         }
         Either::A(ok(req.error_response(ParseError::Header)))
     }

@@ -3,7 +3,7 @@ use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use base64;
 use futures::future::{ok, Either, FutureResult};
-use futures::{Future, Poll};
+use futures::Poll;
 
 pub struct VerifyAuthorization {
     password: String,
@@ -87,10 +87,7 @@ where
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
     type Error = S::Error;
-    type Future = Either<
-        FutureResult<Self::Response, Self::Error>,
-        Box<Future<Item = Self::Response, Error = Self::Error>>,
-    >;
+    type Future = Either<FutureResult<Self::Response, Self::Error>, S::Future>;
 
     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
         self.service.poll_ready()
@@ -98,7 +95,7 @@ where
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         match VerifyAuthorization::validate(req.headers(), &self.password) {
-            Ok(_) => Either::B(Box::new(self.service.call(req))),
+            Ok(_) => Either::B(self.service.call(req)),
             Err(_) => Either::A(ok(req.error_response(ParseError::Header))),
         }
     }
