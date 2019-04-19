@@ -14,6 +14,7 @@ addons:
 
 before_script:
   - which diesel || cargo install diesel_cli
+  - rustup component add clippy
   - diesel setup
   - diesel migration run
 
