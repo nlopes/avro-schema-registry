@@ -16,3 +16,8 @@ before_script:
   - which diesel || cargo install diesel_cli
   - diesel setup
   - diesel migration run
+
+jobs:
+  include:
+    - script: cargo test --verbose
+    - script: cargo clippy

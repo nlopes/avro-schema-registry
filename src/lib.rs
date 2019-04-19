@@ -1,6 +1,4 @@
 #![feature(result_map_or_else)]
-#![feature(trait_alias)]
-#![feature(type_ascription)]
 
 extern crate actix;
 extern crate chrono;

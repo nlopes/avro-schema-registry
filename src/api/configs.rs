@@ -2,7 +2,6 @@ use actix_web::{
     web::{Data, Json, Path},
     Error, HttpResponse,
 };
-
 use futures::Future;
 
 use crate::app::AppState;

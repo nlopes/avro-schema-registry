@@ -37,6 +37,10 @@ pub fn api_routing(cfg: &mut web::RouterConfig) {
             .wrap(middleware::VerifyAcceptHeader)
             .wrap(middleware::VerifyAuthorization::new(&password))
             .service(
+                web::resource("/compatibility/subjects/{subject}/versions/{version}")
+                    .route(web::post().to_async(api::check_compatibility)),
+            )
+            .service(
                 web::resource("/config")
                     .route(web::get().to_async(api::get_config))
                     .route(web::put().to_async(api::put_config)),
@@ -46,6 +50,7 @@ pub fn api_routing(cfg: &mut web::RouterConfig) {
                     .route(web::get().to_async(api::get_subject_config))
                     .route(web::put().to_async(api::put_subject_config)),
             )
+            .service(web::resource("/schemas/ids/{id}").to_async(api::get_schema))
             .service(
                 web::scope("/subjects")
                     .service(web::resource("").to_async(api::get_subjects))
@@ -77,7 +82,6 @@ pub fn api_routing(cfg: &mut web::RouterConfig) {
                         web::resource("/{subject}/versions/{version}/schema")
                             .to_async(api::get_subject_version_schema),
                     ),
-            )
-            .service(web::resource("/schemas/ids/{id}").to_async(api::get_schema)),
+            ),
     );
 }

@@ -1,15 +1,15 @@
+use actix_web::{
+    web::{Data, Json, Path},
+    Error, HttpResponse,
+};
+use futures::Future;
+
 use crate::api::SchemaBody;
 use crate::app::AppState;
 use crate::db::models::{
     DeleteSubject, GetSubjectVersion, GetSubjectVersions, GetSubjects, SchemaResponse,
     VerifySchemaRegistration,
 };
-
-use actix_web::{
-    web::{Data, Json, Path},
-    Error, HttpResponse,
-};
-use futures::Future;
 
 pub fn get_subjects(data: Data<AppState>) -> impl Future<Item = HttpResponse, Error = Error> {
     data.db

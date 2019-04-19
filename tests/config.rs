@@ -8,6 +8,7 @@ speculate! {
     before {
         let conn = db::connection::connection();
         let server = ApiTesterServer::new();
+        db::cleanup::reset(&conn);
     }
 
     after {
