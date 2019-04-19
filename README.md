@@ -30,7 +30,7 @@ using this service as your API.
 ## Endpoints
 
 | Endpoint | Method | Maturity |
-|---|---|---/
+|---|---|---|
 | `/compatibility/subjects/{subject}/versions/{version}` | POST | Unimplemented |
 | `/config` | GET | Ready |
 | `/config` | PUT | Ready |
@@ -85,21 +85,21 @@ cargo run # or the binary after running `cargo build`
 ### Unit
 
 ```
-ncargo test middleware
+cargo test middleware
 ```
 
 ### Integration
 
 1) Setup testing environment variables
 ```
- export RUST_TEST_THREADS=1 \
+export RUST_TEST_THREADS=1 \
     DATABASE_URL=postgres://postgres:@localhost:5432/diesel_testing \
     SCHEMA_REGISTRY_PASSWORD=silly_password
 ```
 
 2) Run test suite
 ```
- cargo test speculate
+cargo test speculate
 ```
 
 ## Important
