@@ -7,6 +7,7 @@ use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 pub struct ConnectionPooler(pub Pool<ConnectionManager<PgConnection>>);
+pub type PoolerAddr = Addr<ConnectionPooler>;
 
 impl Actor for ConnectionPooler {
     type Context = SyncContext<Self>;

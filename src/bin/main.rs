@@ -8,6 +8,7 @@ use sentry::integrations::panic::register_panic_handler;
 use sentry::internals::IntoDsn;
 
 use avro_schema_registry::app;
+use avro_schema_registry::db::ConnectionPooler;
 
 fn main() -> Result<(), Box<Error>> {
     env::set_var("RUST_LOG", "actix_web=debug,avro_schema_registry=debug");
@@ -24,13 +25,16 @@ fn main() -> Result<(), Box<Error>> {
     register_panic_handler();
 
     HttpServer::new(move || {
+        // TODO: remove this magic number 4?
+        let db_addr = ConnectionPooler::init(4);
+
         App::new()
             .wrap(Logger::default())
             .configure(app::monitoring_routing)
-            .data(app::create_api_state())
+            .data(db_addr)
             .configure(app::api_routing)
     })
-    .bind(env::var("DEFAULT_HOST").unwrap_or("127.0.0.1:8080".to_string()))
+    .bind(env::var("DEFAULT_HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string()))
     .unwrap()
     .shutdown_timeout(2)
     .start();

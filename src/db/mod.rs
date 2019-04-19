@@ -1,4 +1,4 @@
-pub use self::connection::ConnectionPooler;
+pub use self::connection::{ConnectionPooler, PoolerAddr};
 
 mod connection;
 pub mod handlers;

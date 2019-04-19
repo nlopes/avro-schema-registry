@@ -5,30 +5,26 @@ use actix_web::{
 use futures::Future;
 
 use crate::api::errors::ApiError;
-use crate::app::AppState;
 use crate::db::models::{GetConfig, GetSubjectConfig, SetConfig, SetSubjectConfig};
+use crate::db::PoolerAddr;
 
-pub fn get_config(data: Data<AppState>) -> impl Future<Item = HttpResponse, Error = ApiError> {
+pub fn get_config(db: Data<PoolerAddr>) -> impl Future<Item = HttpResponse, Error = ApiError> {
     info!("path=/config,method=get");
 
-    data.db
-        .send(GetConfig {})
-        .from_err()
-        .and_then(|res| match res {
-            Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Err(e),
-        })
+    db.send(GetConfig {}).from_err().and_then(|res| match res {
+        Ok(config) => Ok(HttpResponse::Ok().json(config)),
+        Err(e) => Err(e),
+    })
 }
 
 pub fn put_config(
     body: Json<SetConfig>,
-    data: Data<AppState>,
+    db: Data<PoolerAddr>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let compatibility = body.compatibility;
     info!("method=put,compatibility={}", compatibility);
 
-    data.db
-        .send(SetConfig { compatibility })
+    db.send(SetConfig { compatibility })
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
@@ -39,13 +35,12 @@ pub fn put_config(
 /// Get compatibility level for a subject.
 pub fn get_subject_config(
     subject_path: Path<String>,
-    data: Data<AppState>,
+    db: Data<PoolerAddr>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let subject = subject_path.into_inner();
     info!("method=get,subject={}", subject);
 
-    data.db
-        .send(GetSubjectConfig { subject })
+    db.send(GetSubjectConfig { subject })
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
@@ -62,7 +57,7 @@ pub fn get_subject_config(
 pub fn put_subject_config(
     subject_path: Path<String>,
     body: Json<SetConfig>,
-    data: Data<AppState>,
+    db: Data<PoolerAddr>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let subject = subject_path.into_inner();
     let compatibility = body.compatibility;
@@ -71,14 +66,13 @@ pub fn put_subject_config(
         subject, compatibility
     );
 
-    data.db
-        .send(SetSubjectConfig {
-            subject,
-            compatibility,
-        })
-        .from_err()
-        .and_then(|res| match res {
-            Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Err(e),
-        })
+    db.send(SetSubjectConfig {
+        subject,
+        compatibility,
+    })
+    .from_err()
+    .and_then(|res| match res {
+        Ok(config) => Ok(HttpResponse::Ok().json(config)),
+        Err(e) => Err(e),
+    })
 }

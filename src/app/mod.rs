@@ -1,24 +1,10 @@
 use std::env;
 
-use actix::Addr;
 use actix_web::web;
 
 use crate::api;
-use crate::db::ConnectionPooler;
 use crate::health;
 use crate::middleware;
-
-pub struct AppState {
-    pub db: Addr<ConnectionPooler>,
-}
-
-pub fn create_api_state() -> AppState {
-    // TODO: remove this magic number 4?
-    let db_addr = ConnectionPooler::init(4);
-    AppState {
-        db: db_addr.clone(),
-    }
-}
 
 pub fn monitoring_routing(cfg: &mut web::RouterConfig) {
     cfg.service(
