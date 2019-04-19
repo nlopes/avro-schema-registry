@@ -5,7 +5,7 @@ use super::schema::*;
 use super::schemas::Schema;
 use super::subjects::Subject;
 
-use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 #[derive(Debug, Identifiable, Associations, Queryable)]
 #[table_name = "schema_versions"]
@@ -34,7 +34,7 @@ impl SchemaVersion {
         diesel::insert_into(schema_versions)
             .values(&sv)
             .get_result::<SchemaVersion>(conn)
-            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
     pub fn find(
@@ -48,7 +48,7 @@ impl SchemaVersion {
             .filter(subject_id.eq(find_subject_id))
             .filter(schema_id.eq(find_schema_id))
             .get_result::<SchemaVersion>(conn)
-            .or_else(|_| Err(ApiError::new(ApiErrorCode::VersionNotFound)))
+            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::VersionNotFound)))
     }
 
     pub fn with_schema_and_subject(
@@ -67,7 +67,7 @@ impl SchemaVersion {
             .filter(schema_id.eq(search_schema_id))
             .select(id)
             .execute(conn)
-            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
     pub fn versions_with_subject_name(
@@ -84,10 +84,10 @@ impl SchemaVersion {
             .order(version.asc())
             .load::<Option<i32>>(conn)
             .map_or_else(
-                |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                |_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
                 |versions| {
                     if versions.is_empty() {
-                        Err(ApiError::new(ApiErrorCode::SubjectNotFound))
+                        Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
                     } else {
                         Ok(versions)
                     }
@@ -112,7 +112,7 @@ impl SchemaVersion {
         match res {
             Ok(v) => Ok(v),
             Err(diesel::NotFound) => Ok(None),
-            _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+            _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
         }
     }
 
@@ -135,20 +135,20 @@ impl SchemaVersion {
                 .first(conn)
             {
                 Err(diesel::result::Error::NotFound) => {
-                    Err(ApiError::new(ApiErrorCode::VersionNotFound))
+                    Err(ApiError::new(ApiAvroErrorCode::VersionNotFound))
                 }
-                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
                 Ok(o) => Ok(o),
             }?;
 
             let schema_json = match schemas.find(schema_id_result).select(json).first(conn) {
-                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
                 Ok(o) => Ok(o),
             }?;
 
             Ok((
                 schema_id_result,
-                schema_version.ok_or_else(|| ApiError::new(ApiErrorCode::VersionNotFound))?,
+                schema_version.ok_or_else(|| ApiError::new(ApiAvroErrorCode::VersionNotFound))?,
                 schema_json,
             ))
         })
@@ -176,14 +176,14 @@ impl SchemaVersion {
                 .first(conn)
             {
                 Err(diesel::result::Error::NotFound) => {
-                    Err(ApiError::new(ApiErrorCode::VersionNotFound))
+                    Err(ApiError::new(ApiAvroErrorCode::VersionNotFound))
                 }
-                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
                 Ok(o) => Ok(o),
             }?;
 
             let schema_json = match schemas.find(schema_id_result).select(json).first(conn) {
-                Err(_) => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
                 Ok(o) => Ok(o),
             }?;
 
@@ -252,9 +252,9 @@ impl SchemaVersion {
             Subject::get_by_name(conn, subject.to_owned()).and_then(|subject| {
                 diesel::delete(SchemaVersion::belonging_to(&subject).filter(version.eq(v as i32)))
                     .execute(conn)
-                    .or_else(|_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))
+                    .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)))
                     .and_then(|o| match o {
-                        0 => Err(ApiError::new(ApiErrorCode::VersionNotFound)),
+                        0 => Err(ApiError::new(ApiAvroErrorCode::VersionNotFound)),
                         _ => Ok(v as u32),
                     })
             })

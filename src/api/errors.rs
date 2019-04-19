@@ -1,14 +1,6 @@
+use actix;
 use actix_web::{http::StatusCode, HttpResponse};
-
-#[derive(Debug, Serialize, Clone)]
-pub enum ApiStatusCode {
-    NotFound = 404,
-    Conflict = 409,
-
-    UnprocessableEntity = 422,
-
-    InternalServerError = 500,
-}
+use serde_json;
 
 // TODO: maybe replace this with serde_aux::serde_aux_enum_number_declare
 macro_rules! enum_number {
@@ -30,7 +22,7 @@ macro_rules! enum_number {
 }
 
 // We use the macro to ensure we serialize as numbers, not as the name.
-enum_number!(ApiErrorCode {
+enum_number!(ApiAvroErrorCode {
     SubjectNotFound = 40401,
     VersionNotFound = 40402,
     SchemaNotFound = 40403,
@@ -44,97 +36,85 @@ enum_number!(ApiErrorCode {
     MasterForwardingError = 50003,
 });
 
-impl ApiErrorCode {
+impl ApiAvroErrorCode {
     pub fn message(&self) -> &str {
         match self {
-            ApiErrorCode::SubjectNotFound => "Subject not found",
-            ApiErrorCode::VersionNotFound => "Version not found",
-            ApiErrorCode::SchemaNotFound => "Schema not found",
+            ApiAvroErrorCode::SubjectNotFound => "Subject not found",
+            ApiAvroErrorCode::VersionNotFound => "Version not found",
+            ApiAvroErrorCode::SchemaNotFound => "Schema not found",
 
-            ApiErrorCode::InvalidAvroSchema => "Invalid Avro schema",
-            ApiErrorCode::InvalidVersion => "Invalid version",
-            ApiErrorCode::InvalidCompatibilityLevel => "Invalid compatibility level",
+            ApiAvroErrorCode::InvalidAvroSchema => "Invalid Avro schema",
+            ApiAvroErrorCode::InvalidVersion => "Invalid version",
+            ApiAvroErrorCode::InvalidCompatibilityLevel => "Invalid compatibility level",
 
-            ApiErrorCode::BackendDatastoreError => "Error in the backend datastore",
-            ApiErrorCode::OperationTimedOut => "Operation timed out",
-            ApiErrorCode::MasterForwardingError => {
+            ApiAvroErrorCode::BackendDatastoreError => "Error in the backend datastore",
+            ApiAvroErrorCode::OperationTimedOut => "Operation timed out",
+            ApiAvroErrorCode::MasterForwardingError => {
                 "Error while forwarding the request to the master"
             }
         }
     }
 }
 
-impl std::fmt::Display for ApiErrorCode {
+#[derive(Debug, Serialize, Clone)]
+pub struct ApiErrorResponse {
+    pub error_code: ApiAvroErrorCode,
+    pub message: String,
+}
+
+#[derive(Debug, Fail, Clone)]
+#[fail(display = "{}", response)]
+pub struct ApiError {
+    pub status_code: StatusCode,
+    pub response: ApiErrorResponse,
+}
+
+impl ApiError {
+    pub fn new(error_code: ApiAvroErrorCode) -> Self {
+        let status_code = match error_code {
+            ApiAvroErrorCode::SubjectNotFound => StatusCode::NOT_FOUND,
+            ApiAvroErrorCode::VersionNotFound => StatusCode::NOT_FOUND,
+            ApiAvroErrorCode::SchemaNotFound => StatusCode::NOT_FOUND,
+
+            ApiAvroErrorCode::InvalidAvroSchema => StatusCode::UNPROCESSABLE_ENTITY,
+            ApiAvroErrorCode::InvalidVersion => StatusCode::UNPROCESSABLE_ENTITY,
+            ApiAvroErrorCode::InvalidCompatibilityLevel => StatusCode::UNPROCESSABLE_ENTITY,
+
+            ApiAvroErrorCode::BackendDatastoreError => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiAvroErrorCode::OperationTimedOut => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiAvroErrorCode::MasterForwardingError => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        ApiError {
+            status_code,
+            response: ApiErrorResponse {
+                error_code,
+                message: error_code.message().to_string(),
+            },
+        }
+    }
+}
+
+impl std::fmt::Display for ApiAvroErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", &self.message())
     }
 }
 
-#[derive(Debug, Serialize, Clone)]
-pub struct ApiErrorResponse {
-    pub error_code: ApiErrorCode,
-    pub message: String,
+impl std::fmt::Display for ApiErrorResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", serde_json::json!(self))
+    }
 }
 
-#[derive(Debug, Serialize, Clone)]
-pub struct ApiError {
-    pub status_code: ApiStatusCode,
-    pub response: ApiErrorResponse,
-}
-
-impl ApiError {
-    pub fn new(error_code: ApiErrorCode) -> Self {
-        let status_code = match error_code {
-            ApiErrorCode::SubjectNotFound => ApiStatusCode::NotFound,
-            ApiErrorCode::VersionNotFound => ApiStatusCode::NotFound,
-            ApiErrorCode::SchemaNotFound => ApiStatusCode::NotFound,
-
-            ApiErrorCode::InvalidAvroSchema => ApiStatusCode::UnprocessableEntity,
-            ApiErrorCode::InvalidVersion => ApiStatusCode::UnprocessableEntity,
-            ApiErrorCode::InvalidCompatibilityLevel => ApiStatusCode::UnprocessableEntity,
-
-            ApiErrorCode::BackendDatastoreError => ApiStatusCode::InternalServerError,
-            ApiErrorCode::OperationTimedOut => ApiStatusCode::InternalServerError,
-            ApiErrorCode::MasterForwardingError => ApiStatusCode::InternalServerError,
-        };
-        Self::with_optional_message(status_code, error_code, None)
-    }
-
-    pub fn with_message(
-        status_code: ApiStatusCode,
-        error_code: ApiErrorCode,
-        message: String,
-    ) -> Self {
-        Self::with_optional_message(status_code, error_code, Some(message))
-    }
-
-    fn with_optional_message(
-        status_code: ApiStatusCode,
-        error_code: ApiErrorCode,
-        message: Option<String>,
-    ) -> Self {
-        ApiError {
-            status_code,
-            response: ApiErrorResponse {
-                error_code,
-                message: if let Some(extra) = message {
-                    format!("{}: {}", error_code.message(), extra)
-                } else {
-                    error_code.message().to_string()
-                },
-            },
-        }
-    }
-
-    pub fn http_response(&self) -> HttpResponse {
-        // TODO: do this in a better way, I shouldn't need to call a function for this. What I
-        // should do instead is implement a trait on FutureResponse<HttpResponse>
+impl actix_web::ResponseError for ApiError {
+    fn error_response(&self) -> HttpResponse {
         match self.status_code {
-            ApiStatusCode::NotFound => HttpResponse::NotFound().json(&self.response),
-            ApiStatusCode::InternalServerError => {
+            StatusCode::NOT_FOUND => HttpResponse::NotFound().json(&self.response),
+            StatusCode::INTERNAL_SERVER_ERROR => {
                 HttpResponse::InternalServerError().json(&self.response)
             }
-            ApiStatusCode::UnprocessableEntity => {
+            StatusCode::UNPROCESSABLE_ENTITY => {
                 HttpResponse::build(StatusCode::UNPROCESSABLE_ENTITY).json(&self.response)
             }
             _ => HttpResponse::NotImplemented().finish(),
@@ -142,9 +122,7 @@ impl ApiError {
     }
 }
 
-impl actix_web::ResponseError for ApiErrorCode {}
-
-impl std::error::Error for ApiErrorCode {
+impl std::error::Error for ApiAvroErrorCode {
     fn description(&self) -> &str {
         self.message()
     }
@@ -154,14 +132,20 @@ impl std::error::Error for ApiErrorCode {
     }
 }
 
-impl std::convert::From<diesel::result::Error> for ApiErrorCode {
+impl std::convert::From<diesel::result::Error> for ApiAvroErrorCode {
     fn from(_error: diesel::result::Error) -> Self {
-        ApiErrorCode::BackendDatastoreError
+        ApiAvroErrorCode::BackendDatastoreError
     }
 }
 
 impl std::convert::From<diesel::result::Error> for ApiError {
     fn from(_error: diesel::result::Error) -> Self {
-        ApiError::new(ApiErrorCode::BackendDatastoreError)
+        ApiError::new(ApiAvroErrorCode::BackendDatastoreError)
+    }
+}
+
+impl std::convert::From<actix::MailboxError> for ApiError {
+    fn from(_error: actix::MailboxError) -> Self {
+        ApiError::new(ApiAvroErrorCode::BackendDatastoreError)
     }
 }

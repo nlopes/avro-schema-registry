@@ -4,7 +4,7 @@ use actix::{Actor, Addr, SyncArbiter, SyncContext};
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 
-use crate::api::errors::{ApiError, ApiErrorCode, ApiStatusCode};
+use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 pub struct ConnectionPooler(pub Pool<ConnectionManager<PgConnection>>);
 
@@ -27,12 +27,8 @@ impl ConnectionPooler {
     }
 
     pub fn connection(&self) -> Result<DBConnection, ApiError> {
-        self.0.get().map_err(|e| {
-            ApiError::with_message(
-                ApiStatusCode::InternalServerError,
-                ApiErrorCode::BackendDatastoreError,
-                format!("{}", e),
-            )
-        })
+        self.0
+            .get()
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 }

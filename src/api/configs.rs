@@ -1,13 +1,14 @@
 use actix_web::{
     web::{Data, Json, Path},
-    Error, HttpResponse,
+    HttpResponse,
 };
 use futures::Future;
 
+use crate::api::errors::ApiError;
 use crate::app::AppState;
 use crate::db::models::{GetConfig, GetSubjectConfig, SetConfig, SetSubjectConfig};
 
-pub fn get_config(data: Data<AppState>) -> impl Future<Item = HttpResponse, Error = Error> {
+pub fn get_config(data: Data<AppState>) -> impl Future<Item = HttpResponse, Error = ApiError> {
     info!("path=/config,method=get");
 
     data.db
@@ -15,14 +16,14 @@ pub fn get_config(data: Data<AppState>) -> impl Future<Item = HttpResponse, Erro
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
 pub fn put_config(
     body: Json<SetConfig>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let compatibility = body.compatibility;
     info!("method=put,compatibility={}", compatibility);
 
@@ -31,7 +32,7 @@ pub fn put_config(
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
@@ -39,7 +40,7 @@ pub fn put_config(
 pub fn get_subject_config(
     subject_path: Path<String>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let subject = subject_path.into_inner();
     info!("method=get,subject={}", subject);
 
@@ -48,7 +49,7 @@ pub fn get_subject_config(
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
@@ -62,7 +63,7 @@ pub fn put_subject_config(
     subject_path: Path<String>,
     body: Json<SetConfig>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let subject = subject_path.into_inner();
     let compatibility = body.compatibility;
     info!(
@@ -78,6 +79,6 @@ pub fn put_subject_config(
         .from_err()
         .and_then(|res| match res {
             Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }

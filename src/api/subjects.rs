@@ -1,30 +1,30 @@
 use actix_web::{
     web::{Data, Json, Path},
-    Error, HttpResponse,
+    HttpResponse,
 };
 use futures::Future;
 
-use crate::api::SchemaBody;
+use crate::api::{errors::ApiError, SchemaBody};
 use crate::app::AppState;
 use crate::db::models::{
     DeleteSubject, GetSubjectVersion, GetSubjectVersions, GetSubjects, SchemaResponse,
     VerifySchemaRegistration,
 };
 
-pub fn get_subjects(data: Data<AppState>) -> impl Future<Item = HttpResponse, Error = Error> {
+pub fn get_subjects(data: Data<AppState>) -> impl Future<Item = HttpResponse, Error = ApiError> {
     data.db
         .send(GetSubjects {})
         .from_err()
         .and_then(|res| match res {
             Ok(subjects) => Ok(HttpResponse::Ok().json(subjects.content)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
 pub fn get_subject_versions(
     subject: Path<String>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     data.db
         .send(GetSubjectVersions {
             subject: subject.into_inner(),
@@ -32,14 +32,14 @@ pub fn get_subject_versions(
         .from_err()
         .and_then(|res| match res {
             Ok(r) => Ok(HttpResponse::Ok().json(r.versions)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
 pub fn delete_subject(
     subject: Path<String>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     data.db
         .send(DeleteSubject {
             subject: subject.into_inner(),
@@ -47,7 +47,7 @@ pub fn delete_subject(
         .from_err()
         .and_then(|res| match res {
             Ok(r) => Ok(HttpResponse::Ok().json(r.versions)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
@@ -60,7 +60,7 @@ pub fn delete_subject(
 pub fn get_subject_version(
     info: Path<(String, u32)>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let q = info.into_inner();
 
     data.db
@@ -71,14 +71,14 @@ pub fn get_subject_version(
         .from_err()
         .and_then(|res| match res {
             Ok(r) => Ok(HttpResponse::Ok().json(r)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
 pub fn get_subject_version_latest(
     subject: Path<String>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     data.db
         .send(GetSubjectVersion {
             subject: subject.into_inner(),
@@ -87,7 +87,7 @@ pub fn get_subject_version_latest(
         .from_err()
         .and_then(|res| match res {
             Ok(r) => Ok(HttpResponse::Ok().json(r)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
@@ -96,7 +96,7 @@ pub fn get_subject_version_latest(
 pub fn get_subject_version_schema(
     info: Path<(String, u32)>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let q = info.into_inner();
 
     data.db
@@ -107,14 +107,14 @@ pub fn get_subject_version_schema(
         .from_err()
         .and_then(|res| match res {
             Ok(r) => Ok(HttpResponse::Ok().json(SchemaResponse { schema: r.schema })),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
 pub fn get_subject_version_latest_schema(
     subject: Path<String>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     data.db
         .send(GetSubjectVersion {
             subject: subject.into_inner(),
@@ -123,7 +123,7 @@ pub fn get_subject_version_latest_schema(
         .from_err()
         .and_then(|res| match res {
             Ok(r) => Ok(HttpResponse::Ok().json(SchemaResponse { schema: r.schema })),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }
 
@@ -131,7 +131,7 @@ pub fn post_subject(
     subject: Path<String>,
     body: Json<SchemaBody>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     data.db
         .send(VerifySchemaRegistration {
             subject: subject.into_inner(),
@@ -140,6 +140,6 @@ pub fn post_subject(
         .from_err()
         .and_then(|res| match res {
             Ok(response) => Ok(HttpResponse::Ok().json(response)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }

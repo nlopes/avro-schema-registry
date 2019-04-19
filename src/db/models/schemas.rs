@@ -3,7 +3,7 @@ use avro_rs;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 
-use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 use super::schema::*;
 
@@ -46,7 +46,7 @@ impl Message for GetSchema {
 impl Schema {
     fn parse(data: String) -> Result<avro_rs::Schema, ApiError> {
         avro_rs::Schema::parse_str(&data)
-            .map_err(|_| ApiError::new(ApiErrorCode::InvalidAvroSchema))
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::InvalidAvroSchema))
     }
 
     fn generate_fingerprint(data: String) -> Result<String, ApiError> {
@@ -62,7 +62,7 @@ impl Schema {
         Ok(schemas
             .filter(fingerprint2.eq(fingerprint))
             .load::<Schema>(conn)
-            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))?
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))?
             .pop())
     }
 
@@ -106,7 +106,7 @@ impl Schema {
                 let sch = match json {
                     Some(j) => Schema::new(conn, j, fingerprint)?,
                     None => db_schema
-                        .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError))?,
+                        .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))?,
                 };
                 (sch, latest_version + 1)
             }
@@ -115,7 +115,7 @@ impl Schema {
                 let sch = match json {
                     Some(j) => Schema::new(conn, j, fingerprint)?,
                     None => db_schema
-                        .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError))?,
+                        .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))?,
                 };
                 (sch, 1)
             }
@@ -152,7 +152,7 @@ impl Schema {
         diesel::insert_into(schemas)
             .values(&schema)
             .get_result::<Schema>(conn)
-            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
     pub fn get_by_json(conn: &PgConnection, data: String) -> Result<Self, ApiError> {
@@ -160,7 +160,7 @@ impl Schema {
         schemas
             .filter(json.eq(data))
             .get_result::<Schema>(conn)
-            .or_else(|_| Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
+            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::SchemaNotFound)))
     }
 
     pub fn get_by_id(conn: &PgConnection, schema_id: i64) -> Result<Schema, ApiError> {
@@ -168,7 +168,7 @@ impl Schema {
         schemas
             .find(schema_id)
             .get_result::<Schema>(conn)
-            .or_else(|_| Err(ApiError::new(ApiErrorCode::SchemaNotFound)))
+            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::SchemaNotFound)))
     }
 
     pub fn verify_registration(
@@ -185,7 +185,7 @@ impl Schema {
                             id: schema.id,
                             version: schema_version
                                 .version
-                                .ok_or_else(|| ApiError::new(ApiErrorCode::VersionNotFound))?,
+                                .ok_or_else(|| ApiError::new(ApiAvroErrorCode::VersionNotFound))?,
                             schema: schema.json,
                         })
                     })

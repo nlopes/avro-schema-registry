@@ -1,6 +1,6 @@
 use actix::Handler;
 
-use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 use super::{
     ConnectionPooler, DeleteSubject, DeleteSubjectResponse, GetSubjectVersion,
@@ -47,7 +47,7 @@ impl Handler<GetSubjectVersion> for ConnectionPooler {
         match query.version {
             Some(v) => {
                 if !v.within_limits() {
-                    return Err(ApiError::new(ApiErrorCode::InvalidVersion));
+                    return Err(ApiError::new(ApiAvroErrorCode::InvalidVersion));
                 }
                 SchemaVersion::get_schema_id(&conn, query.subject.to_string(), v)
             }

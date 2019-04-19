@@ -5,7 +5,7 @@ use actix::Message;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
-use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 use super::schema::*;
 use super::Subject;
@@ -90,7 +90,7 @@ impl ConfigCompatibility {
     pub fn new(level: String) -> Result<ConfigCompatibility, ApiError> {
         match level.parse::<CompatibilityLevel>() {
             Ok(l) => Ok(Self { compatibility: l }),
-            Err(_) => Err(ApiError::new(ApiErrorCode::InvalidCompatibilityLevel)),
+            Err(_) => Err(ApiError::new(ApiAvroErrorCode::InvalidCompatibilityLevel)),
         }
     }
 }
@@ -140,7 +140,7 @@ impl Config {
             // probably could) and instead return an internal server error.
             Ok(config) => config
                 .compatibility
-                .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
             Err(diesel::result::Error::NotFound) => {
                 // If we didn't find an entry with id 0, then this is either:
                 //
@@ -149,7 +149,7 @@ impl Config {
                 Config::insert(&Self::DEFAULT_COMPATIBILITY.to_string(), conn)?;
                 Ok(Self::DEFAULT_COMPATIBILITY.to_string())
             }
-            _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+            _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
         }
     }
 
@@ -165,8 +165,8 @@ impl Config {
             // probably could) and instead return an internal server error.
             Ok(config) => config
                 .compatibility
-                .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
-            _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
+            _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
         }
     }
 
@@ -186,8 +186,8 @@ impl Config {
                 {
                     Ok(conf) => conf
                         .compatibility
-                        .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
-                    _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                        .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
+                    _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
                 }
             }
             Err(diesel::result::Error::NotFound) => {
@@ -199,10 +199,10 @@ impl Config {
                         subject_id.eq(subject.id),
                     ))
                     .execute(conn)
-                    .or_else(|_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))?;
+                    .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)))?;
                 Ok(compat)
             }
-            _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+            _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
         }
     }
 
@@ -218,7 +218,7 @@ impl Config {
         {
             Ok(config) => config
                 .compatibility
-                .ok_or_else(|| ApiError::new(ApiErrorCode::BackendDatastoreError)),
+                .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
             Err(diesel::result::Error::NotFound) => {
                 // If we didn't find an entry with id 0, then this is either:
                 //
@@ -227,7 +227,7 @@ impl Config {
                 Config::insert(compat, conn)?;
                 Ok(compat.to_string())
             }
-            _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+            _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
         }
     }
 
@@ -242,6 +242,6 @@ impl Config {
                 updated_at.eq(diesel::dsl::now),
             ))
             .execute(conn)
-            .or_else(|_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)))
+            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)))
     }
 }

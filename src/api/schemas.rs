@@ -1,9 +1,10 @@
 use actix_web::{
     web::{Data, Json, Path},
-    Error, HttpResponse,
+    HttpResponse,
 };
 use futures::Future;
 
+use crate::api::errors::ApiError;
 use crate::app::AppState;
 use crate::db::models::{DeleteSchemaVersion, GetSchema, RegisterSchema};
 
@@ -15,7 +16,7 @@ pub struct SchemaBody {
 pub fn get_schema(
     id: Path<i64>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     info!("method=get,id={}", id);
 
     data.db
@@ -24,15 +25,15 @@ pub fn get_schema(
         })
         .from_err()
         .and_then(|res| match res {
-            Ok(schema) => Ok(HttpResponse::Ok().json(schema)),
-            Err(e) => Ok(e.http_response()),
+            Ok(response) => Ok(HttpResponse::Ok().json(response)),
+            Err(e) => Err(e),
         })
 }
 
 pub fn delete_schema_version(
     info: Path<(String, u32)>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let q = info.into_inner();
 
     data.db
@@ -41,9 +42,9 @@ pub fn delete_schema_version(
             version: q.1,
         })
         .from_err()
-        .and_then(move |res| match res {
-            Ok(r) => HttpResponse::Ok().body(format!("{}", r)),
-            Err(e) => e.http_response(),
+        .and_then(|res| match res {
+            Ok(r) => Ok(HttpResponse::Ok().body(format!("{}", r))),
+            Err(e) => Err(e),
         })
 }
 
@@ -51,7 +52,7 @@ pub fn register_schema(
     subject: Path<String>,
     body: Json<SchemaBody>,
     data: Data<AppState>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     data.db
         .send(RegisterSchema {
             subject: subject.to_owned(),
@@ -60,6 +61,6 @@ pub fn register_schema(
         .from_err()
         .and_then(|res| match res {
             Ok(response) => Ok(HttpResponse::Ok().json(response)),
-            Err(e) => Ok(e.http_response()),
+            Err(e) => Err(e),
         })
 }

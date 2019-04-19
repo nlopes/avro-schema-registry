@@ -1,6 +1,6 @@
 use actix::Handler;
 
-use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 use super::{
     ConnectionPooler, DeleteSchemaVersion, GetSchema, GetSubjectVersionResponse, RegisterSchema,
@@ -30,7 +30,7 @@ impl Handler<DeleteSchemaVersion> for ConnectionPooler {
 
         let conn = self.connection()?;
         if !delete_schema_version.version.within_limits() {
-            return Err(ApiError::new(ApiErrorCode::InvalidVersion));
+            return Err(ApiError::new(ApiAvroErrorCode::InvalidVersion));
         }
         SchemaVersion::delete_version_with_subject(&conn, delete_schema_version)
     }

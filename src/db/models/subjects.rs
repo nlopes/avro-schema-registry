@@ -4,7 +4,7 @@ use diesel::prelude::*;
 
 use super::schema::*;
 
-use crate::api::errors::{ApiError, ApiErrorCode};
+use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 #[derive(Debug, Identifiable, Associations, Queryable, Serialize)]
 #[table_name = "subjects"]
@@ -33,7 +33,7 @@ impl Subject {
             .do_update()
             .set(name.eq(&subject))
             .get_result::<Subject>(conn)
-            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
     pub fn distinct_names(conn: &PgConnection) -> Result<Vec<String>, ApiError> {
@@ -42,7 +42,7 @@ impl Subject {
         subjects
             .select(name)
             .load::<String>(conn)
-            .map_err(|_| ApiError::new(ApiErrorCode::BackendDatastoreError))
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
     pub fn get_by_name(conn: &PgConnection, subject: String) -> Result<Self, ApiError> {
@@ -50,9 +50,9 @@ impl Subject {
         match subjects.filter(name.eq(subject)).first::<Subject>(conn) {
             Ok(s) => Ok(s),
             Err(diesel::result::Error::NotFound) => {
-                Err(ApiError::new(ApiErrorCode::SubjectNotFound))
+                Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
             }
-            _ => Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+            _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
         }
     }
 
@@ -63,12 +63,12 @@ impl Subject {
         use super::SchemaVersion;
 
         SchemaVersion::delete_subject_with_name(&conn, subject_name).map_or_else(
-            |_| Err(ApiError::new(ApiErrorCode::BackendDatastoreError)),
+            |_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
             |res| {
                 if !res.is_empty() {
                     Ok(res)
                 } else {
-                    Err(ApiError::new(ApiErrorCode::SubjectNotFound))
+                    Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
                 }
             },
         )
