@@ -23,8 +23,8 @@ pub fn create_api_state() -> AppState {
 pub fn monitoring_routing(cfg: &mut web::RouterConfig) {
     cfg.service(
         web::scope("_")
-            .service(web::resource("/health_check").to(health::status))
-            .service(web::resource("/metrics").to(health::metrics)),
+            .service(web::resource("/health_check").route(web::get().to(health::status)))
+            .service(web::resource("/metrics").route(web::get().to(health::metrics))),
     );
 }
 
@@ -50,7 +50,7 @@ pub fn api_routing(cfg: &mut web::RouterConfig) {
                     .route(web::get().to_async(api::get_subject_config))
                     .route(web::put().to_async(api::put_subject_config)),
             )
-            .service(web::resource("/schemas/ids/{id}").to_async(api::get_schema))
+            .service(web::resource("/schemas/ids/{id}").route(web::get().to_async(api::get_schema)))
             .service(
                 web::scope("/subjects")
                     .service(web::resource("").to_async(api::get_subjects))
