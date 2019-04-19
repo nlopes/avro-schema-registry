@@ -1,7 +1,3 @@
-#![feature(custom_attribute)]
-#![feature(result_map_or_else)]
-#![feature(type_ascription)]
-
 use std::env;
 use std::error::Error;
 
