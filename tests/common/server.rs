@@ -12,6 +12,7 @@ use serde_json::Value as JsonValue;
 
 use super::settings::get_schema_registry_password;
 use avro_schema_registry::app;
+use avro_schema_registry::db::ConnectionPooler;
 
 pub struct ApiTesterServer;
 
@@ -21,7 +22,7 @@ impl ApiTesterServer {
             HttpService::new(
                 App::new()
                     .configure(app::monitoring_routing)
-                    .data(app::create_api_state())
+                    .data(ConnectionPooler::init(4))
                     .configure(app::api_routing),
             )
         })
