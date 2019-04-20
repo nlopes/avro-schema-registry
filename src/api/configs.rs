@@ -1,17 +1,23 @@
 use actix_web::{
+    web,
     web::{Data, Json, Path},
     HttpResponse,
 };
 use futures::Future;
 
 use crate::api::errors::ApiError;
-use crate::db::models::{GetConfig, GetSubjectConfig, SetConfig, SetSubjectConfig};
-use crate::db::PoolerAddr;
+use crate::db::models::{Config, ConfigCompatibility, SetConfig};
+use crate::db::{DbManage, DbPool};
 
-pub fn get_config(db: Data<PoolerAddr>) -> impl Future<Item = HttpResponse, Error = ApiError> {
+pub fn get_config(db: Data<DbPool>) -> impl Future<Item = HttpResponse, Error = ApiError> {
     info!("path=/config,method=get");
 
-    db.send(GetConfig {}).from_err().and_then(|res| match res {
+    web::block(move || {
+        let conn = db.connection()?;
+        Config::get_global_compatibility(&conn).and_then(ConfigCompatibility::new)
+    })
+    .from_err()
+    .then(|res| match res {
         Ok(config) => Ok(HttpResponse::Ok().json(config)),
         Err(e) => Err(e),
     })
@@ -19,33 +25,40 @@ pub fn get_config(db: Data<PoolerAddr>) -> impl Future<Item = HttpResponse, Erro
 
 pub fn put_config(
     body: Json<SetConfig>,
-    db: Data<PoolerAddr>,
+    db: Data<DbPool>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let compatibility = body.compatibility;
     info!("method=put,compatibility={}", compatibility);
 
-    db.send(SetConfig { compatibility })
-        .from_err()
-        .and_then(|res| match res {
-            Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Err(e),
-        })
+    web::block(move || {
+        let conn = db.connection()?;
+        Config::set_global_compatibility(&conn, &compatibility.valid()?.to_string())
+            .and_then(ConfigCompatibility::new)
+    })
+    .from_err()
+    .then(|res| match res {
+        Ok(config) => Ok(HttpResponse::Ok().json(config)),
+        Err(e) => Err(e),
+    })
 }
 
 /// Get compatibility level for a subject.
 pub fn get_subject_config(
     subject_path: Path<String>,
-    db: Data<PoolerAddr>,
+    db: Data<DbPool>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let subject = subject_path.into_inner();
     info!("method=get,subject={}", subject);
 
-    db.send(GetSubjectConfig { subject })
-        .from_err()
-        .and_then(|res| match res {
-            Ok(config) => Ok(HttpResponse::Ok().json(config)),
-            Err(e) => Err(e),
-        })
+    web::block(move || {
+        let conn = db.connection()?;
+        Config::get_with_subject_name(&conn, subject).and_then(ConfigCompatibility::new)
+    })
+    .from_err()
+    .then(|res| match res {
+        Ok(config) => Ok(HttpResponse::Ok().json(config)),
+        Err(e) => Err(e),
+    })
 }
 
 /// Update compatibility level for the specified subject.
@@ -57,7 +70,7 @@ pub fn get_subject_config(
 pub fn put_subject_config(
     subject_path: Path<String>,
     body: Json<SetConfig>,
-    db: Data<PoolerAddr>,
+    db: Data<DbPool>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let subject = subject_path.into_inner();
     let compatibility = body.compatibility;
@@ -66,12 +79,13 @@ pub fn put_subject_config(
         subject, compatibility
     );
 
-    db.send(SetSubjectConfig {
-        subject,
-        compatibility,
+    web::block(move || {
+        let conn = db.connection()?;
+        Config::set_with_subject_name(&conn, subject, compatibility.valid()?.to_string())
+            .and_then(ConfigCompatibility::new)
     })
     .from_err()
-    .and_then(|res| match res {
+    .then(|res| match res {
         Ok(config) => Ok(HttpResponse::Ok().json(config)),
         Err(e) => Err(e),
     })

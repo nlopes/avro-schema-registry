@@ -1,25 +1,22 @@
 use actix_web::http;
 use speculate::speculate;
 
-use avro_schema_registry::api::SchemaBody;
-
-use crate::common::server::{ApiTester, ApiTesterServer};
-use crate::db;
-
 speculate! {
     before {
-        let conn = db::connection::connection();
+        use avro_schema_registry::db::{DbManage, DbPool};
+
+        use crate::common::server::{ApiTesterServer};
+        use crate::db::DbAuxOperations;
+
         let server = ApiTesterServer::new();
-        db::cleanup::reset(&conn);
+        let conn = DbPool::new_pool(Some(1)).connection().unwrap();
+        conn.reset();
     }
-
-    after {
-        db::cleanup::reset(&conn);
-    }
-
 
     describe "test schema for compatibility" {
         before {
+            use avro_schema_registry::api::SchemaBody;
+
             let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
             let schema = SchemaBody{schema: schema_s};
         }
@@ -35,7 +32,7 @@ speculate! {
 
         context "with non existent version" {
             before {
-                db::subject::create_test_subject_with_config(&conn, "FULL");
+                conn.create_test_subject_with_config("FULL");
             }
 
             it "returns 404 with 'Version not found'" {

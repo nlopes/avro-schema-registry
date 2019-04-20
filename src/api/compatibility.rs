@@ -4,12 +4,12 @@ use actix_web::{
 };
 
 use crate::api::SchemaBody;
-use crate::db::PoolerAddr;
+use crate::db::DbPool;
 
 pub fn check_compatibility(
     info: Path<(String, u32)>,
     body: Json<SchemaBody>,
-    _data: Data<PoolerAddr>,
+    _data: Data<DbPool>,
 ) -> HttpResponse {
     let (subject, version) = info.into_inner();
     let _schema = body.into_inner().schema;

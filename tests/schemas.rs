@@ -2,20 +2,16 @@ use actix_web::http;
 use serde_json;
 use speculate::speculate;
 
-use avro_schema_registry::api::SchemaBody;
-
-use crate::common::server::{ApiTester, ApiTesterServer};
-use crate::db;
-
 speculate! {
     before {
-        let conn = db::connection::connection();
-        let server = ApiTesterServer::new();
-        db::cleanup::reset(&conn);
-    }
+        use avro_schema_registry::db::{DbManage, DbPool};
 
-    after {
-        db::cleanup::reset(&conn);
+        use crate::common::server::{ApiTesterServer};
+        use crate::db::DbAuxOperations;
+
+        let conn = DbPool::new_pool(Some(1)).connection().unwrap();
+        let server = ApiTesterServer::new();
+        conn.reset();
     }
 
     describe "get schema" {
@@ -29,8 +25,10 @@ speculate! {
 
         context "with schema" {
             before {
+                use avro_schema_registry::api::SchemaBody;
+
                 let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
-                let schema = db::subject::register_schema(&conn, String::from("subject1"), schema_s.to_string());
+                let schema = conn.register_schema(String::from("subject1"), schema_s.to_string());
                 let sch = SchemaBody{schema: schema_s};
             }
 
