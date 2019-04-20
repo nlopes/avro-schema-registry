@@ -1,35 +1,30 @@
 use std::env;
 
-use actix::{Actor, Addr, SyncArbiter, SyncContext};
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
-pub struct ConnectionPooler(pub Pool<ConnectionManager<PgConnection>>);
-pub type PoolerAddr = Addr<ConnectionPooler>;
+pub type DbPool = Pool<ConnectionManager<PgConnection>>;
+pub type DbConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
-impl Actor for ConnectionPooler {
-    type Context = SyncContext<Self>;
+pub trait DbManage {
+    fn new_pool(max_size: Option<u32>) -> Self;
+    fn connection(&self) -> Result<DbConnection, ApiError>;
 }
 
-type DBConnection = PooledConnection<ConnectionManager<PgConnection>>;
-
-impl ConnectionPooler {
-    pub fn pool() -> Pool<ConnectionManager<PgConnection>> {
+impl DbManage for DbPool {
+    fn new_pool(max_size: Option<u32>) -> Self {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let manager = ConnectionManager::<PgConnection>::new(database_url);
-        Pool::new(manager).expect("Failed to create pool.")
+        Pool::builder()
+            .max_size(max_size.unwrap_or(10))
+            .build(manager)
+            .expect("Failed to create pool.")
     }
 
-    pub fn init(n_workers: usize) -> Addr<Self> {
-        let pool = ConnectionPooler::pool();
-        SyncArbiter::start(n_workers, move || ConnectionPooler(pool.clone()))
-    }
-
-    pub fn connection(&self) -> Result<DBConnection, ApiError> {
-        self.0
-            .get()
+    fn connection(&self) -> Result<DbConnection, ApiError> {
+        self.get()
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 }

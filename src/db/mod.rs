@@ -1,5 +1,4 @@
-pub use self::connection::{ConnectionPooler, PoolerAddr};
+pub use self::connection::{DbConnection, DbManage, DbPool};
 
 mod connection;
-pub mod handlers;
 pub mod models;

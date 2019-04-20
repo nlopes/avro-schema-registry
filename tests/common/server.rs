@@ -12,20 +12,50 @@ use serde_json::Value as JsonValue;
 
 use super::settings::get_schema_registry_password;
 use avro_schema_registry::app;
-use avro_schema_registry::db::ConnectionPooler;
+use avro_schema_registry::db::{DbManage, DbPool};
 
-pub struct ApiTesterServer;
+pub struct ApiTesterServer(TestServerRuntime);
 
 impl ApiTesterServer {
-    pub fn new() -> TestServerRuntime {
-        TestServer::new(|| {
+    pub fn new() -> ApiTesterServer {
+        ApiTesterServer(TestServer::new(|| {
             HttpService::new(
                 App::new()
                     .configure(app::monitoring_routing)
-                    .data(ConnectionPooler::init(4))
+                    .data(DbPool::new_pool(Some(1)))
                     .configure(app::api_routing),
             )
-        })
+        }))
+    }
+
+    // TODO(nlopes): redo this whole mess
+    pub fn test(
+        &self,
+        method: http::Method,
+        path: &str,
+        body: Option<JsonValue>,
+        expected_status: http::StatusCode,
+        expected_body: &str,
+    ) {
+        let ApiTesterServer(server) = self;
+        let req = server.request(method, server.url(path)).avro_headers();
+
+        match body {
+            Some(b) => test::block_on(req.send_json(&b))
+                .map_err(|e| panic!("Error: {:?}", e))
+                .and_then(|response| {
+                    response.validate(expected_status, expected_body);
+                    Ok(())
+                })
+                .unwrap(),
+            None => test::block_on(req.send())
+                .map_err(|e| panic!("Error: {:?}", e))
+                .and_then(|response| {
+                    response.validate(expected_status, expected_body);
+                    Ok(())
+                })
+                .unwrap(),
+        };
     }
 }
 
@@ -61,47 +91,5 @@ where
                 Ok(())
             })
             .poll();
-    }
-}
-
-pub trait ApiTester {
-    fn test(
-        &self,
-        method: http::Method,
-        path: &str,
-        body: Option<JsonValue>,
-        expected_status: http::StatusCode,
-        expected_body: &str,
-    );
-}
-
-impl ApiTester for actix_http_test::TestServerRuntime {
-    // TODO(nlopes): redo this whole mess
-    fn test(
-        &self,
-        method: http::Method,
-        path: &str,
-        body: Option<JsonValue>,
-        expected_status: http::StatusCode,
-        expected_body: &str,
-    ) {
-        let req = self.request(method, self.url(path)).avro_headers();
-
-        match body {
-            Some(b) => test::block_on(req.send_json(&b))
-                .map_err(|e| panic!("Error: {:?}", e))
-                .and_then(|response| {
-                    response.validate(expected_status, expected_body);
-                    Ok(())
-                })
-                .unwrap(),
-            None => test::block_on(req.send())
-                .map_err(|e| panic!("Error: {:?}", e))
-                .and_then(|response| {
-                    response.validate(expected_status, expected_body);
-                    Ok(())
-                })
-                .unwrap(),
-        };
     }
 }

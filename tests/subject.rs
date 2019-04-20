@@ -3,23 +3,21 @@ use speculate::speculate;
 
 use avro_schema_registry::api::SchemaBody;
 
-use crate::common::server::{ApiTester, ApiTesterServer};
-use crate::db;
-
 speculate! {
     before {
-        let conn = db::connection::connection();
-        let server = ApiTesterServer::new();
-        db::cleanup::reset(&conn);
-    }
+        use avro_schema_registry::db::{DbManage, DbPool};
 
-    after {
-        db::cleanup::reset(&conn);
+        use crate::common::server::{ApiTesterServer};
+        use crate::db::DbAuxOperations;
+
+        let conn = DbPool::new_pool(Some(1)).connection().unwrap();
+        let server = ApiTesterServer::new();
+        conn.reset();
     }
 
     describe "get subjects" {
         before {
-            db::subject::reset(&conn);
+            conn.reset_subjects();
         }
 
         context "without subjects" {
@@ -30,7 +28,7 @@ speculate! {
 
         context "with subjects" {
             before {
-                db::subject::add(&conn, vec![String::from("subject1"), String::from("subject2")]);
+                conn.add_subjects(vec![String::from("subject1"), String::from("subject2")]);
             }
 
             it "returns list of subjects" {
@@ -53,11 +51,11 @@ speculate! {
 
         context "without versions" {
             before {
-                db::subject::add(&conn, vec![String::from("test.subject")]);
+                conn.add_subjects(vec![String::from("test.subject")]);
             }
 
             after {
-                db::cleanup::reset(&conn);
+                conn.reset_subjects();
             }
 
             // This should never happen with correct usage of the API

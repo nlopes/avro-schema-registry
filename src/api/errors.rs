@@ -1,4 +1,5 @@
 use actix;
+use actix_threadpool;
 use actix_web::{http::StatusCode, HttpResponse};
 use serde_json;
 
@@ -147,5 +148,16 @@ impl std::convert::From<diesel::result::Error> for ApiError {
 impl std::convert::From<actix::MailboxError> for ApiError {
     fn from(_error: actix::MailboxError) -> Self {
         ApiError::new(ApiAvroErrorCode::BackendDatastoreError)
+    }
+}
+
+impl std::convert::From<actix_threadpool::BlockingError<ApiError>> for ApiError {
+    fn from(error: actix_threadpool::BlockingError<ApiError>) -> Self {
+        match error {
+            actix_threadpool::BlockingError::Canceled => {
+                ApiError::new(ApiAvroErrorCode::BackendDatastoreError)
+            }
+            actix_threadpool::BlockingError::Error(e) => e,
+        }
     }
 }
