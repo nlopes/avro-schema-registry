@@ -54,13 +54,13 @@ impl VerifyAuthorization {
     }
 }
 
-impl<S, B> Transform<S> for VerifyAuthorization
+impl<S> Transform<S> for VerifyAuthorization
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>>,
+    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
     type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = S::Error;
     type InitError = ();
     type Transform = VerifyAuthorizationMiddleware<S>;
@@ -79,13 +79,13 @@ pub struct VerifyAuthorizationMiddleware<S> {
     password: String,
 }
 
-impl<S, B> Service for VerifyAuthorizationMiddleware<S>
+impl<S> Service for VerifyAuthorizationMiddleware<S>
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>>,
+    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
     type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = S::Error;
     type Future = Either<FutureResult<Self::Response, Self::Error>, S::Future>;
 

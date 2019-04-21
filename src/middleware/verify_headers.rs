@@ -27,13 +27,13 @@ impl VerifyAcceptHeader {
     }
 }
 
-impl<S, B> Transform<S> for VerifyAcceptHeader
+impl<S> Transform<S> for VerifyAcceptHeader
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>>,
+    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
     type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = S::Error;
     type InitError = ();
     type Transform = VerifyAcceptHeaderMiddleware<S>;
@@ -48,13 +48,13 @@ pub struct VerifyAcceptHeaderMiddleware<S> {
     service: S,
 }
 
-impl<S, B> Service for VerifyAcceptHeaderMiddleware<S>
+impl<S> Service for VerifyAcceptHeaderMiddleware<S>
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>>,
+    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
     type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = S::Error;
     type Future = Either<FutureResult<Self::Response, Self::Error>, S::Future>;
 
