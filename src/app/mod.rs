@@ -6,7 +6,7 @@ use crate::api;
 use crate::health;
 use crate::middleware;
 
-pub fn monitoring_routing(cfg: &mut web::RouterConfig) {
+pub fn monitoring_routing(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("_")
             .service(web::resource("/health_check").route(web::get().to(health::status)))
@@ -14,7 +14,7 @@ pub fn monitoring_routing(cfg: &mut web::RouterConfig) {
     );
 }
 
-pub fn api_routing(cfg: &mut web::RouterConfig) {
+pub fn api_routing(cfg: &mut web::ServiceConfig) {
     let password =
         env::var("SCHEMA_REGISTRY_PASSWORD").expect("Must pass a schema registry password");
 
