@@ -77,22 +77,19 @@ impl SchemaVersion {
         use super::schema::schema_versions::dsl::{schema_versions, subject_id, version};
         use super::schema::subjects::dsl::{id as subjects_id, name, subjects};
 
-        schema_versions
+        match schema_versions
             .inner_join(subjects.on(subject_id.eq(subjects_id)))
             .filter(name.eq(&subject_name))
             .select(version)
             .order(version.asc())
-            .load::<Option<i32>>(conn)
-            .map_or_else(
-                |_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
-                |versions| {
-                    if versions.is_empty() {
-                        Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
-                    } else {
-                        Ok(versions)
-                    }
+            .load::<Option<i32>>(conn) {
+                Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
+                Ok(versions) => if versions.is_empty() {
+                    Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
+                } else {
+                    Ok(versions)
                 },
-            )
+            }
     }
 
     pub fn latest_version_with_subject_name(

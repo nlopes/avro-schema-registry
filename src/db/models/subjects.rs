@@ -62,16 +62,14 @@ impl Subject {
     ) -> Result<Vec<Option<i32>>, ApiError> {
         use super::SchemaVersion;
 
-        SchemaVersion::delete_subject_with_name(&conn, subject_name).map_or_else(
-            |_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
-            |res| {
-                if !res.is_empty() {
-                    Ok(res)
-                } else {
-                    Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
-                }
+        match SchemaVersion::delete_subject_with_name(&conn, subject_name) {
+            Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
+            Ok(res) => if !res.is_empty() {
+                Ok(res)
+            } else {
+                Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
             },
-        )
+        }
     }
 }
 

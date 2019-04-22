@@ -1,5 +1,3 @@
-#![feature(result_map_or_else)]
-
 extern crate actix;
 extern crate chrono;
 #[macro_use]
