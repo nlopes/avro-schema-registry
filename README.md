@@ -65,7 +65,7 @@ cargo build --release
 
 ## Run
 
-This assumes you have a running PostgreSQL instance (versions 9.4 and above).
+This assumes you have a running PostgreSQL instance (versions 9.5 and above).
 
 1) Setup env (everything is controlled through environment variables)
 ```
