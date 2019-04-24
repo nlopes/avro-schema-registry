@@ -1,4 +1,3 @@
-use actix::Message;
 use avro_rs;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
@@ -37,10 +36,6 @@ pub struct SchemaResponse {
 
 pub struct GetSchema {
     pub id: i64,
-}
-
-impl Message for GetSchema {
-    type Result = Result<SchemaResponse, ApiError>;
 }
 
 impl Schema {
@@ -205,17 +200,9 @@ pub struct RegisterSchema {
     pub schema: String,
 }
 
-impl Message for RegisterSchema {
-    type Result = Result<RegisterSchemaResponse, ApiError>;
-}
-
 pub struct VerifySchemaRegistration {
     pub subject: String,
     pub schema: String,
-}
-
-impl Message for VerifySchemaRegistration {
-    type Result = Result<GetSubjectVersionResponse, ApiError>;
 }
 
 pub type VerifyRegistrationResponse = GetSubjectVersionResponse;

@@ -1,4 +1,3 @@
-use actix::Message;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
@@ -80,10 +79,6 @@ pub struct SubjectList {
 
 pub struct GetSubjects;
 
-impl Message for GetSubjects {
-    type Result = Result<SubjectList, ApiError>;
-}
-
 #[derive(Debug, Serialize)]
 pub struct SubjectVersionsResponse {
     // TODO: this should be a new type with values between 1 and 2^31-1
@@ -94,10 +89,6 @@ pub struct GetSubjectVersions {
     pub subject: String,
 }
 
-impl Message for GetSubjectVersions {
-    type Result = Result<SubjectVersionsResponse, ApiError>;
-}
-
 #[derive(Debug, Serialize)]
 pub struct DeleteSubjectResponse {
     pub versions: Vec<Option<i32>>,
@@ -105,10 +96,6 @@ pub struct DeleteSubjectResponse {
 
 pub struct DeleteSubject {
     pub subject: String,
-}
-
-impl Message for DeleteSubject {
-    type Result = Result<DeleteSubjectResponse, ApiError>;
 }
 
 #[derive(Debug, Serialize)]
@@ -124,8 +111,4 @@ pub struct GetSubjectVersionResponse {
     pub id: i64,
     pub version: i32,
     pub schema: String,
-}
-
-impl Message for GetSubjectVersion {
-    type Result = Result<GetSubjectVersionResponse, ApiError>;
 }

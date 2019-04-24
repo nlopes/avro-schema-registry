@@ -1,7 +1,6 @@
 use std::fmt;
 use std::str;
 
-use actix::Message;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
@@ -95,33 +94,16 @@ impl ConfigCompatibility {
     }
 }
 
-pub struct GetConfig;
-impl Message for GetConfig {
-    type Result = Result<ConfigCompatibility, ApiError>;
-}
-
 // Just to be clearer when we're implementing the Handler
 pub type SetConfig = ConfigCompatibility;
-
-impl Message for SetConfig {
-    type Result = Result<ConfigCompatibility, ApiError>;
-}
 
 pub struct GetSubjectConfig {
     pub subject: String,
 }
 
-impl Message for GetSubjectConfig {
-    type Result = Result<ConfigCompatibility, ApiError>;
-}
-
 pub struct SetSubjectConfig {
     pub subject: String,
     pub compatibility: CompatibilityLevel,
-}
-
-impl Message for SetSubjectConfig {
-    type Result = Result<ConfigCompatibility, ApiError>;
 }
 
 impl Config {

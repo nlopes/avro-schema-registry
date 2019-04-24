@@ -1,4 +1,3 @@
-use actix::Message;
 use diesel::prelude::*;
 
 use super::schema::*;
@@ -262,8 +261,4 @@ impl SchemaVersion {
 pub struct DeleteSchemaVersion {
     pub subject: String,
     pub version: u32,
-}
-
-impl Message for DeleteSchemaVersion {
-    type Result = Result<u32, ApiError>;
 }
