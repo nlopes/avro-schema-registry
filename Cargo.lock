@@ -237,7 +237,7 @@ dependencies = [
 
 [[package]]
 name = "actix-web"
-version = "1.0.0-beta.1"
+version = "1.0.0-beta.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "actix-codec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -359,7 +359,7 @@ dependencies = [
  "actix-server-config 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-service 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-threadpool 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "actix-web 1.0.0-beta.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-web 1.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "avro-rs 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2422,7 +2422,7 @@ dependencies = [
 "checksum actix-service 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "dcbfa034a61a48c128de169a019a5f9aa3ac2f7c63b18972e11b4c069321f36b"
 "checksum actix-threadpool 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "97fa58548067c1f0a16a82cdb7c8823deac793d27efd17b51d6ea7861c6d3966"
 "checksum actix-utils 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)" = "80b12b95a3550c49b8f75e80341608bceaa6c544b0c754a0a6ffcf89bdd6d723"
-"checksum actix-web 1.0.0-beta.1 (registry+https://github.com/rust-lang/crates.io-index)" = "07bb9785af50024414b64cda28b727cbe9c24424601a6bd699d16bce3e48822f"
+"checksum actix-web 1.0.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)" = "07bedc2058b6fb05ef5e600653141e51ea588b68f8e7a82358e098965deaae48"
 "checksum actix-web-codegen 0.1.0-beta.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b26f9ce2dff34bda98b3c5b3ec2467a8f1bf08c69b0ae8ff02bc7d74d6af9d84"
 "checksum actix_derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0bf5f6d7bf2d220ae8b4a7ae02a572bb35b7c4806b24049af905ab8110de156c"
 "checksum adler32 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "7e522997b529f05601e05166c07ed17789691f562762c7f3b987263d2dedee5c"
