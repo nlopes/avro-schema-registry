@@ -40,22 +40,18 @@ impl ApiTesterServer {
         let ApiTesterServer(server) = self;
         let req = server.request(method, server.url(path)).avro_headers();
 
-        match body {
-            Some(b) => test::block_on(req.send_json(&b))
-                .map_err(|e| panic!("Error: {:?}", e))
-                .and_then(|response| {
-                    response.validate(expected_status, expected_body);
-                    Ok(())
-                })
-                .unwrap(),
-            None => test::block_on(req.send())
-                .map_err(|e| panic!("Error: {:?}", e))
-                .and_then(|response| {
-                    response.validate(expected_status, expected_body);
-                    Ok(())
-                })
-                .unwrap(),
+        let s = if Ok(body) = body {
+            test::block_on(req.send_orjson(&body))
+        } else {
+            test::block_on(req.send())
         };
+
+        s.map_err(|e| panic!("Error: {:?}", e))
+            .and_then(|response| {
+                response.validate(expected_status, expected_body);
+                Ok(())
+            })
+            .unwrap();
     }
 }
 
