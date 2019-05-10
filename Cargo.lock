@@ -278,6 +278,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-prom"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "actix-service 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-web 1.0.0-beta.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "actix_derive"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -350,7 +361,7 @@ dependencies = [
 
 [[package]]
 name = "avro-schema-registry"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "actix 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-http 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -360,6 +371,7 @@ dependencies = [
  "actix-service 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-threadpool 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.0-beta.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-web-prom 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "avro-rs 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1409,6 +1421,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "prometheus"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cfg-if 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protobuf 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "spin 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "protobuf"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "publicsuffix"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2424,6 +2454,7 @@ dependencies = [
 "checksum actix-utils 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)" = "80b12b95a3550c49b8f75e80341608bceaa6c544b0c754a0a6ffcf89bdd6d723"
 "checksum actix-web 1.0.0-beta.3 (registry+https://github.com/rust-lang/crates.io-index)" = "03c062ba7ed52752a87be4929e8caaf3a7eaa32c5cdf14d102662dd8e81c48e3"
 "checksum actix-web-codegen 0.1.0-beta.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b26f9ce2dff34bda98b3c5b3ec2467a8f1bf08c69b0ae8ff02bc7d74d6af9d84"
+"checksum actix-web-prom 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "f64d1306ff7418949b7d6402179aedc085783ce0a687eac45690bd5d1b0b3514"
 "checksum actix_derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0bf5f6d7bf2d220ae8b4a7ae02a572bb35b7c4806b24049af905ab8110de156c"
 "checksum adler32 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "7e522997b529f05601e05166c07ed17789691f562762c7f3b987263d2dedee5c"
 "checksum aho-corasick 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e6f484ae0c99fec2e858eb6134949117399f222608d84cadb3f58c1f97c2364c"
@@ -2553,6 +2584,8 @@ dependencies = [
 "checksum pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "676e8eb2b1b4c9043511a9b7bea0915320d7e502b0a079fb03f9635a5252b18c"
 "checksum pq-sys 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "6ac25eee5a0582f45a67e837e350d784e7003bd29a5f460796772061ca49ffda"
 "checksum proc-macro2 0.4.28 (registry+https://github.com/rust-lang/crates.io-index)" = "ba92c84f814b3f9a44c5cfca7d2ad77fa10710867d2bbb1b3d175ab5f47daa12"
+"checksum prometheus 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6229bbd7c253cc541ff2d07d842f24e30d85b4d4e7331d49379aaaf7627ff5dc"
+"checksum protobuf 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bc7badf647ae2fa27ba51c218e347386c88cc604fcfe71f2aba0ad017f3f2b75"
 "checksum publicsuffix 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5afecba86dcf1e4fd610246f89899d1924fe12e1e89f555eb7c7f710f3c5ad1d"
 "checksum quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9274b940887ce9addde99c4eee6b5c44cc494b182b97e73dc8ffdcb3397fd3f0"
 "checksum quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)" = "faf4799c5d274f3868a4aae320a0a182cbd2baee377b378f080e16a23e9d80db"

@@ -3,6 +3,7 @@ use std::error::Error;
 
 use actix_rt;
 use actix_web::{middleware::Logger, App, HttpServer, Result};
+use actix_web_prom::PrometheusMetrics;
 use sentry;
 use sentry::integrations::panic::register_panic_handler;
 use sentry::internals::IntoDsn;
@@ -24,11 +25,14 @@ fn main() -> Result<(), Box<Error>> {
     });
     register_panic_handler();
 
+    let prometheus = PrometheusMetrics::new("avro_schema_registry", "/_/metrics");
+
     HttpServer::new(move || {
         let db_pool = DbPool::new_pool(None);
 
         App::new()
             .wrap(Logger::default())
+            .wrap(prometheus.clone())
             .configure(app::monitoring_routing)
             .data(db_pool)
             .configure(app::api_routing)

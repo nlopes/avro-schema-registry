@@ -1,4 +1,3 @@
 - [ ] make sure we check for avro compatibility when registering (https://docs.confluent.io/current/schema-registry/develop/api.html#post--subjects-(string-%20subject)-versions)
 - [ ] test get_subject_version_schema (currently we assume copy&paste so we only test the other path)
 - [ ] /_/health_check should have endoint to check status of DB?
-- [ ] /_/metrics should expose metrics (I intend to use prometheus)

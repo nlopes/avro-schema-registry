@@ -54,7 +54,7 @@ using this service as your API.
 | Endpoint | Method | Maturity |
 |---|---|---|
 | `/_/health_check` | GET | Incomplete |
-| `/_/metrics` | GET | Unimplemented |
+| `/_/metrics` | GET | Ready |
 
 
 ## Build

@@ -9,8 +9,7 @@ use crate::middleware;
 pub fn monitoring_routing(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("_")
-            .service(web::resource("/health_check").route(web::get().to(health::status)))
-            .service(web::resource("/metrics").route(web::get().to(health::metrics))),
+            .service(web::resource("/health_check").route(web::get().to(health::status))),
     );
 }
 
