@@ -40,18 +40,15 @@ impl ApiTesterServer {
         let ApiTesterServer(server) = self;
         let req = server.request(method, server.url(path)).avro_headers();
 
-        let s = if Ok(body) = body {
-            test::block_on(req.send_orjson(&body))
-        } else {
-            test::block_on(req.send())
-        };
+        match body {
+            Some(b) => test::block_on(req.send_json(&b))
+                .unwrap()
+                .validate(expected_status, expected_body),
 
-        s.map_err(|e| panic!("Error: {:?}", e))
-            .and_then(|response| {
-                response.validate(expected_status, expected_body);
-                Ok(())
-            })
-            .unwrap();
+            None => test::block_on(req.send())
+                .unwrap()
+                .validate(expected_status, expected_body),
+        };
     }
 }
 
@@ -67,7 +64,7 @@ impl AvroRequest for ClientRequest {
     }
 }
 
-pub trait ValidateResponse {
+trait ValidateResponse {
     fn validate(self, expected_status: http::StatusCode, expected_body: &str);
 }
 
