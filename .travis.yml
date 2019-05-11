@@ -19,11 +19,10 @@ addons:
 
 before_script:
   - which diesel || cargo install diesel_cli
-  - rustup component add clippy rustfmt
+  - rustup component add clippy
   - diesel setup
   - diesel migration run
 
 script:
-  - cargo fmt -- --check
   - cargo test --verbose
   - cargo clippy
