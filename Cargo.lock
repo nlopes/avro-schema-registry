@@ -361,7 +361,7 @@ dependencies = [
 
 [[package]]
 name = "avro-schema-registry"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "actix 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-http 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",

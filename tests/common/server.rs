@@ -28,7 +28,6 @@ impl ApiTesterServer {
         }))
     }
 
-    // TODO(nlopes): redo this whole mess
     pub fn test(
         &self,
         method: http::Method,
