@@ -81,14 +81,17 @@ impl SchemaVersion {
             .filter(name.eq(&subject_name))
             .select(version)
             .order(version.asc())
-            .load::<Option<i32>>(conn) {
-                Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
-                Ok(versions) => if versions.is_empty() {
+            .load::<Option<i32>>(conn)
+        {
+            Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
+            Ok(versions) => {
+                if versions.is_empty() {
                     Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
                 } else {
                     Ok(versions)
-                },
+                }
             }
+        }
     }
 
     pub fn latest_version_with_subject_name(
