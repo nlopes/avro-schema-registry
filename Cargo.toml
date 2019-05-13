@@ -19,7 +19,7 @@ doc = false
 actix = { version="0.8", features=["http"] }
 actix-http = "0.1"
 actix-rt = "0.2"
-actix-service = "0.3"
+actix-service = "0.4"
 actix-server-config = "0.1"
 actix-threadpool = "0.1"
 actix-web = "1.0.0-beta.3"
