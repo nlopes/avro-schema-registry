@@ -10,7 +10,7 @@ dependencies = [
 
 [[package]]
 name = "actix"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "actix-http 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -363,7 +363,7 @@ dependencies = [
 name = "avro-schema-registry"
 version = "0.1.2"
 dependencies = [
- "actix 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-http 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-http-test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-rt 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2473,7 +2473,7 @@ dependencies = [
 
 [metadata]
 "checksum MacTypes-sys 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "eaf9f0d0b1cc33a4d2aee14fb4b2eac03462ef4db29c8ac4057327d8a71ad86f"
-"checksum actix 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)" = "36a83679c6e2d4be88c627e6585af7b28dbc8c8b69294e9f3ebc6f5100255e0f"
+"checksum actix 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)" = "671ce3d27313f236827a5dd153a1073ad03ef31fc77f562020263e7830cf1ef7"
 "checksum actix-codec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9f2c11af4b06dc935d8e1b1491dad56bfb32febc49096a91e773f8535c176453"
 "checksum actix-connect 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d7fbab0d79b2f3415a79570e3db12eaa75c26239541e613b832655145a5e9488"
 "checksum actix-http 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "61acf7e60d6f7b80bd9e28513e8d65c1f555f81ddbebcb7c01952e1908cd01c3"
