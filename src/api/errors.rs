@@ -128,7 +128,7 @@ impl std::error::Error for ApiAvroErrorCode {
         self.message()
     }
 
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         None
     }
 }

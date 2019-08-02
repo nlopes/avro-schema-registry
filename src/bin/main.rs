@@ -11,7 +11,7 @@ use sentry::internals::IntoDsn;
 use avro_schema_registry::app;
 use avro_schema_registry::db::{DbManage, DbPool};
 
-fn main() -> Result<(), Box<Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     env::set_var("RUST_LOG", "actix_web=debug,avro_schema_registry=debug");
     env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
