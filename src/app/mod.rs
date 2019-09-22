@@ -51,8 +51,8 @@ pub fn api_routing(cfg: &mut web::ServiceConfig) {
                     )
                     .service(
                         web::resource("/{subject}/versions/latest")
-                            .route(web::get().to_async(api::get_subject_version_latest)),
-                        // TODO: .route(web::delete().to_async(api::delete_schema_version_latest)),
+                            .route(web::get().to_async(api::get_subject_version_latest))
+                            .route(web::delete().to_async(api::delete_schema_version_latest)),
                     )
                     .service(
                         web::resource("/{subject}/versions/{version}")

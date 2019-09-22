@@ -5,6 +5,9 @@ authors = ["Norberto Lopes <nlopes.ml@gmail.com>"]
 edition = "2018"
 autotests = false
 
+[badges]
+travis-ci = { repository = "nlopes/avro-schema-registry", branch = "master" }
+
 [[test]]
 name = "integration"
 path = "tests/tests.rs"
