@@ -1,9 +1,9 @@
 use actix_http::HttpService;
-use actix_http_test::{TestServer, TestServerRuntime};
+use actix_http_test::{TestServer, TestServerRuntime, block_on};
 use actix_web::{
     client::{ClientRequest, ClientResponse},
     error::PayloadError,
-    http, test,
+    http,
     web::Bytes,
     App,
 };
@@ -40,11 +40,11 @@ impl ApiTesterServer {
         let req = server.request(method, server.url(path)).avro_headers();
 
         match body {
-            Some(b) => test::block_on(req.send_json(&b))
+            Some(b) => block_on(req.send_json(&b))
                 .unwrap()
                 .validate(expected_status, expected_body),
 
-            None => test::block_on(req.send())
+            None => block_on(req.send())
                 .unwrap()
                 .validate(expected_status, expected_body),
         };
