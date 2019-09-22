@@ -60,7 +60,10 @@ pub fn delete_subject(
     })
 }
 
-fn get_subject_version_from_db(
+/// `get_subject_version_from_db` fetches a specific subject version pair from the
+/// database, given a subject name and an optional version. If the version is not given,
+/// then we get the latest schema id.
+pub(crate) fn get_subject_version_from_db(
     conn: &diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>,
     subject: String,
     version: Option<u32>,

@@ -62,6 +62,34 @@ pub fn delete_schema_version(
     })
 }
 
+pub fn delete_schema_version_latest(
+    subject: Path<String>,
+    db: Data<DbPool>,
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
+    let subject = subject.into_inner();
+
+    web::block(move || {
+        use crate::api::version::VersionLimit;
+        let conn = db.connection()?;
+
+        let sv_response = crate::api::subjects::get_subject_version_from_db(&conn, subject.clone(), None)?;
+
+        let delete_schema_version = DeleteSchemaVersion {
+            subject: subject,
+            version: sv_response.version as u32,
+        };
+        if !delete_schema_version.version.within_limits() {
+            return Err(ApiError::new(ApiAvroErrorCode::InvalidVersion));
+        }
+        SchemaVersion::delete_version_with_subject(&conn, delete_schema_version)
+    })
+    .from_err()
+    .then(|res| match res {
+        Ok(r) => Ok(HttpResponse::Ok().body(format!("{}", r))),
+        Err(e) => Err(e),
+    })
+}
+
 pub fn register_schema(
     subject: Path<String>,
     body: Json<SchemaBody>,

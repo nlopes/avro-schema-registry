@@ -42,7 +42,7 @@ using this service as your API.
 | `/subjects/{subject}` | POST | Ready |
 | `/subjects/{subject}/versions` | GET | Ready |
 | `/subjects/{subject}/versions` | POST | Ready |
-| `/subjects/{subject}/versions/latest` | DELETE | Unimplemented |
+| `/subjects/{subject}/versions/latest` | DELETE | Ready |
 | `/subjects/{subject}/versions/latest` | GET | Ready |
 | `/subjects/{subject}/versions/{version}` | DELETE | Ready |
 | `/subjects/{subject}/versions/{version}` | GET | Ready |

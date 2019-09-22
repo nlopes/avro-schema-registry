@@ -276,6 +276,28 @@ speculate! {
                                 http::StatusCode::OK, "1");
                 }
             }
+
+            context "with latest version" {
+                context "with one version" {
+                    it "returns version of schema deleted" {
+                        server.test(http::Method::DELETE, "/subjects/test.subject/versions/latest", None,
+                                    http::StatusCode::OK, "1");
+                    }
+                }
+
+                context "with multiple versions" {
+                    before {
+                        let schema_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
+                        let schema = SchemaBody{schema: schema_s};
+                        server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
+                                    http::StatusCode::OK, "");
+                    }
+                    it "returns version of schema deleted" {
+                        server.test(http::Method::DELETE, "/subjects/test.subject/versions/latest", None,
+                                    http::StatusCode::OK, "2");
+                    }
+                }
+            }
         }
     }
 }
