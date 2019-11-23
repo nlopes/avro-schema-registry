@@ -23,7 +23,7 @@ actix = { version="0.8", features=["http"] }
 actix-http = "0.2"
 actix-rt = "0.2"
 actix-service = "0.4"
-actix-server-config = "0.1"
+actix-server-config = "0.2"
 actix-threadpool = "0.1"
 actix-web = "1.0"
 actix-web-prom = "0.1"
