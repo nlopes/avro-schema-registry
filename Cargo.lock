@@ -289,13 +289,13 @@ dependencies = [
 
 [[package]]
 name = "actix-web-prom"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "actix-service 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "prometheus 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -380,7 +380,7 @@ dependencies = [
  "actix-service 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-threadpool 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "actix-web-prom 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-web-prom 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "avro-rs 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1506,7 +1506,7 @@ dependencies = [
 
 [[package]]
 name = "prometheus"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2569,7 +2569,7 @@ dependencies = [
 "checksum actix-utils 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)" = "6ea501068a0173533704be321f149853f702d9e3c3ce9d57e7a96d94b1ab5aca"
 "checksum actix-web 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "af3a1b967cdbacb903c4b9ae71257a7f098d881b25eb483d0c468b7dac579b03"
 "checksum actix-web-codegen 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3fe9e3cdec1e645b675f354766e0688c5705021c85ab3cf739be1c8999b91c76"
-"checksum actix-web-prom 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c9dc336e1956156bed24a37127009718be46698dc88b984edaaafbd2d2d78618"
+"checksum actix-web-prom 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "943fb2821bdbd2c60c569edeb357547f2c2f8328feb75df4e6fdb01b73f3b17f"
 "checksum actix_derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0bf5f6d7bf2d220ae8b4a7ae02a572bb35b7c4806b24049af905ab8110de156c"
 "checksum adler32 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "7e522997b529f05601e05166c07ed17789691f562762c7f3b987263d2dedee5c"
 "checksum ahash 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)" = "2f00e10d4814aa20900e7948174384f79f1317f24f0ba7494e735111653fc330"
@@ -2704,7 +2704,7 @@ dependencies = [
 "checksum proc-macro-hack 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)" = "e688f31d92ffd7c1ddc57a1b4e6d773c0f2a14ee437a4b0a4f5a69c80eb221c8"
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
 "checksum proc-macro2 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4c5c2380ae88876faae57698be9e9775e3544decad214599c3a6266cca6ac802"
-"checksum prometheus 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "605a19be7e14fec3cd6ef79dbb6463790ebfda1bfeab55daba3293d99b407d24"
+"checksum prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5567486d5778e2c6455b1b90ff1c558f29e751fc018130fa182e15828e728af1"
 "checksum protobuf 2.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8aefcec9f142b524d98fc81d07827743be89dd6586a1ba6ab21fa66a500b3fa5"
 "checksum publicsuffix 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5afecba86dcf1e4fd610246f89899d1924fe12e1e89f555eb7c7f710f3c5ad1d"
 "checksum quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9274b940887ce9addde99c4eee6b5c44cc494b182b97e73dc8ffdcb3397fd3f0"
