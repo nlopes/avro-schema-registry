@@ -134,7 +134,7 @@ impl Schema {
         let new_schema = NewSchema {
             json,
             fingerprint: fingerprint.to_owned(),
-            fingerprint2: Some(fingerprint.to_owned()),
+            fingerprint2: Some(fingerprint),
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
         };
