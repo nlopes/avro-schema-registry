@@ -4,8 +4,8 @@ use actix_web::{
     dev::{ServiceRequest, ServiceResponse},
     http,
 };
-use futures::future::{ok, Either, FutureResult};
-use futures::Poll;
+use futures::future::{ok, Either, Ready};
+use futures::task::{Context, Poll};
 
 pub struct VerifyAcceptHeader;
 
@@ -37,7 +37,7 @@ where
     type Error = S::Error;
     type InitError = ();
     type Transform = VerifyAcceptHeaderMiddleware<S>;
-    type Future = FutureResult<Self::Transform, Self::InitError>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
         ok(VerifyAcceptHeaderMiddleware { service })
@@ -56,17 +56,17 @@ where
     type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = S::Error;
-    type Future = Either<FutureResult<Self::Response, Self::Error>, S::Future>;
+    type Future = Either<Ready<Result<Self::Response, Self::Error>>, S::Future>;
 
-    fn poll_ready(&mut self) -> Poll<(), Self::Error> {
-        self.service.poll_ready()
+    fn poll_ready(&mut self, ct: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(ct)
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         if VerifyAcceptHeader::is_valid(req.headers()) {
-            return Either::B(self.service.call(req));
+            return Either::Right(self.service.call(req));
         }
-        Either::A(ok(req.error_response(ParseError::Header)))
+        Either::Left(ok(req.error_response(ParseError::Header)))
     }
 }
 

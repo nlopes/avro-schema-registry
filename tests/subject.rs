@@ -1,303 +1,468 @@
 use actix_web::http;
-use speculate::speculate;
 
+use crate::common::server::setup;
+use crate::db::DbAuxOperations;
 use avro_schema_registry::api::SchemaBody;
 
-speculate! {
-    before {
-        use avro_schema_registry::db::{DbManage, DbPool};
+#[actix_rt::test]
+async fn test_get_subjects_without_subjects() {
+    let (server, conn) = setup();
+    conn.reset_subjects();
+    // returns empty list
+    server
+        .test(
+            http::Method::GET,
+            "/subjects",
+            None,
+            http::StatusCode::OK,
+            "[]",
+        )
+        .await;
+}
 
-        use crate::common::server::{ApiTesterServer};
-        use crate::db::DbAuxOperations;
+#[actix_rt::test]
+async fn test_get_subjects_with_subjects() {
+    let (server, conn) = setup();
+    conn.reset_subjects();
+    conn.add_subjects(vec![String::from("subject1"), String::from("subject2")]);
 
-        let conn = DbPool::new_pool(Some(1)).connection().unwrap();
-        let server = ApiTesterServer::new();
-        conn.reset();
-    }
+    // it returns list of subjects
+    server
+        .test(
+            http::Method::GET,
+            "/subjects",
+            None,
+            http::StatusCode::OK,
+            "[\"subject1\",\"subject2\"]",
+        )
+        .await;
+}
 
-    describe "get subjects" {
-        before {
-            conn.reset_subjects();
-        }
+#[actix_rt::test]
+async fn test_get_versions_under_subject_without_subject() {
+    let (server, _) = setup();
+    // it returns 404 with 'Subject not found'
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
+}
 
-        context "without subjects" {
-            it "returns empty list" {
-                server.test(http::Method::GET, "/subjects", None, http::StatusCode::OK, "[]");
-            }
-        }
+#[actix_rt::test]
+async fn test_get_versions_under_subject_without_versions() {
+    let (server, conn) = setup();
+    conn.add_subjects(vec![String::from("test.subject")]);
 
-        context "with subjects" {
-            before {
-                conn.add_subjects(vec![String::from("subject1"), String::from("subject2")]);
-            }
+    // This should never happen with correct usage of the API
+    // it returns 404 with 'Subject not found'
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
 
-            it "returns list of subjects" {
-                server.test(http::Method::GET, "/subjects", None,
-                            http::StatusCode::OK,
-                            "[\"subject1\",\"subject2\"]");
-            }
-        }
+    conn.reset_subjects();
+}
 
-    }
+#[actix_rt::test]
+async fn test_get_versions_under_subject_with_versions() {
+    let (server, _) = setup();
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
 
-    describe "get versions under subject" {
-        context "without subject" {
-            it "returns 404 with 'Subject not found'" {
-                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-            }
-        }
+    // it returns list of one
+    // TODO(nlopes): dangerous, postgresql can pick any other ID
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions",
+            None,
+            http::StatusCode::OK,
+            "[1]",
+        )
+        .await;
 
-        context "without versions" {
-            before {
-                conn.add_subjects(vec![String::from("test.subject")]);
-            }
+    // it returns list of many
+    let schema2_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
+    let schema2 = SchemaBody { schema: schema2_s };
 
-            after {
-                conn.reset_subjects();
-            }
+    // This modifies the database state in preparation for the next request
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema2)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
 
-            // This should never happen with correct usage of the API
-            it "returns 404 with 'Subject not found'" {
-                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-            }
-        }
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions",
+            None,
+            http::StatusCode::OK,
+            "[1,2]",
+        )
+        .await;
+}
 
-        context "with versions" {
-            before {
-                let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
-                let schema = SchemaBody{schema: schema_s};
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
-                            http::StatusCode::OK, "");
-            }
+#[actix_rt::test]
+async fn test_delete_subject_without_subject() {
+    let (server, _) = setup();
+    // it returns 404 with 'Subject not found'
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
+}
 
-            it "returns list of one" {
-                // TODO(nlopes): dangerous, postgresql can pick any other ID
-                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
-                    http::StatusCode::OK, "[1]");
-            }
+#[actix_rt::test]
+async fn test_delete_subject_with_subject() {
+    let (server, _) = setup();
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
 
-            it "returns list of many" {
-                let schema2_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
-                let schema2 = SchemaBody{schema: schema2_s};
+    // it returns list with versions of schemas deleted
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject",
+            None,
+            http::StatusCode::OK,
+            "[1]",
+        )
+        .await;
+}
 
-                // This modifies the database state in preparation for the next request
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema2)),
-                    http::StatusCode::OK, "");
+#[actix_rt::test]
+async fn test_get_version_of_schema_registered_under_subject_without_subject() {
+    let (server, _) = setup();
+    // it returns 404 with 'Subject not found'
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions/1",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
+}
 
-                server.test(http::Method::GET, "/subjects/test.subject/versions", None,
-                            http::StatusCode::OK, "[1,2]");
-            }
-        }
-    }
+#[actix_rt::test]
+async fn test_get_version_of_schema_registered_under_subject_with_subject() {
+    let (server, _) = setup();
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
 
-    describe "delete subject" {
-        context "without subject" {
-            it "returns 404 with 'Subject not found'" {
-                server.test(http::Method::DELETE, "/subjects/test.subject", None,
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-            }
-        }
+    // with non existing version it returns 404 with 'Version not found'
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions/2",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40402,\"message\":\"Version not found\"}",
+        )
+        .await;
+    // with version out of bounds it returns 422 with 'Invalid version' for lower bound
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions/0",
+            None,
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            "{\"error_code\":42202,\"message\":\"Invalid version\"}",
+        )
+        .await;
 
-        context "with subject" {
-            before {
-                let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
-                let schema = SchemaBody{schema: schema_s};
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
-                            http::StatusCode::OK, "");
-            }
+    // with version out of bounds it returns 422 with 'Invalid version' for upper bound
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions/2147483648",
+            None,
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            "{\"error_code\":42202,\"message\":\"Invalid version\"}",
+        )
+        .await;
 
-            it "returns list with versions of schemas deleted" {
-                server.test(http::Method::DELETE, "/subjects/test.subject", None,
-                            http::StatusCode::OK, "[1]");
-            }
-        }
-    }
+    // with latest version it returns version with schema
+    // TODO(nlopes): fix expect body - requires knowing that the id
+    // below is 86 - maybe direct sql query
+    //
+    //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
 
-    describe "get version of schema registered under subject" {
-        context "without subject" {
-            it "returns 404 with 'Subject not found'" {
-                server.test(http::Method::GET, "/subjects/test.subject/versions/1", None,
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-            }
-        }
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions/latest",
+            None,
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
 
-        context "with subject" {
-            before {
-                let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
-                let schema = SchemaBody{schema: schema_s};
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
-                            http::StatusCode::OK, "");
-            }
+    // with existing version it returns version with schema
+    // TODO(nlopes): fix expect body - requires knowing that the id
+    // below is 86 - maybe direct sql query
+    //
+    //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
 
-            context "with non existing version" {
-                it "returns 404 with 'Version not found'" {
-                    server.test(http::Method::GET, "/subjects/test.subject/versions/2", None,
-                                http::StatusCode::NOT_FOUND,
-                                "{\"error_code\":40402,\"message\":\"Version not found\"}");
-                }
-            }
+    server
+        .test(
+            http::Method::GET,
+            "/subjects/test.subject/versions/1",
+            None,
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
+}
 
-            context "with version out of bounds" {
-                it "returns 422 with 'Invalid version' for lower bound" {
-                    server.test(http::Method::GET, "/subjects/test.subject/versions/0", None,
-                                http::StatusCode::UNPROCESSABLE_ENTITY,
-                                "{\"error_code\":42202,\"message\":\"Invalid version\"}");
-                }
+#[actix_rt::test]
+async fn test_register_schema_under_subject_with_valid_schema() {
+    let (server, _) = setup();
 
-                it "returns 422 with 'Invalid version' for upper bound" {
-                    server.test(http::Method::GET, "/subjects/test.subject/versions/2147483648", None,
-                                http::StatusCode::UNPROCESSABLE_ENTITY,
-                                "{\"error_code\":42202,\"message\":\"Invalid version\"}");
-                }
-            }
+    // it returns schema identifier
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
 
-            context "with latest version" {
-                it "returns version with schema" {
-                    // TODO(nlopes): fix expect body - requires knowing that the id
-                    // below is 86 - maybe direct sql query
-                    //
-                    //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
+    // TODO(nlopes): Check for body "{\"id\":\"147\"}"
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
+}
 
-                    server.test(http::Method::GET, "/subjects/test.subject/versions/latest", None,
-                                http::StatusCode::OK, "");
-                }
-            }
+#[actix_rt::test]
+async fn test_register_schema_under_subject_with_invalid_schema() {
+    let (server, _) = setup();
+    let schema = SchemaBody {
+        schema: "{}".to_string(),
+    };
 
-            context "with existing version" {
-                it "returns version with schema" {
-                    // TODO(nlopes): fix expect body - requires knowing that the id
-                    // below is 86 - maybe direct sql query
-                    //
-                    //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
+    // it returns 422 with 'Invalid Avro schema'
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            "{\"error_code\":42201,\"message\":\"Invalid Avro schema\"}",
+        )
+        .await;
+}
 
-                    server.test(http::Method::GET, "/subjects/test.subject/versions/1", None,
-                                http::StatusCode::OK, "");
+#[actix_rt::test]
+async fn test_check_schema_registration_without_subject() {
+    let (server, _) = setup();
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
 
-                }
-            }
-        }
-    }
+    // it returns 404 with 'Subject not found'
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject",
+            Some(json!(schema)),
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
+}
 
-    describe "register schema under subject" {
-        context "with valid schema" {
-            it "returns schema identifier" {
-                let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
-                let schema = SchemaBody{schema: schema_s};
+#[actix_rt::test]
+async fn test_check_schema_registration_with_subject_but_different_schema() {
+    let (server, _) = setup();
 
-                // TODO(nlopes): Check for body "{\"id\":\"147\"}"
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
-                            http::StatusCode::OK, "");
-            }
-        }
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
+    let schema2_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
+    let schema2 = SchemaBody { schema: schema2_s };
 
-        context "with invalid schema" {
-            it "returns 422 with 'Invalid Avro schema'" {
-                let schema = SchemaBody{schema: "{}".to_string()};
+    // setup of schema 2
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema2)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
 
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
-                            http::StatusCode::UNPROCESSABLE_ENTITY,
-                            "{\"error_code\":42201,\"message\":\"Invalid Avro schema\"}");
-            }
-        }
-    }
+    // it returns 404 with Subject not found
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject",
+            Some(json!(schema)),
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40403,\"message\":\"Schema not found\"}",
+        )
+        .await;
+}
 
-    describe "check schema registration" {
-        before {
-            let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
-            let schema = SchemaBody{schema: schema_s};
-        }
+#[actix_rt::test]
+async fn test_delete_schema_version_under_subject_without_subject() {
+    let (server, _) = setup();
+    // it returns 404 with 'Subject not found'
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject/versions/1",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
+}
+#[actix_rt::test]
+async fn test_delete_schema_version_under_subject_with_subject() {
+    let (server, _) = setup();
+    // setup
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
 
-        context "without subject" {
-            it "returns 404 with 'Subject not found'" {
-                server.test(http::Method::POST, "/subjects/test.subject", Some(json!(schema)),
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-            }
-        }
+    // with non existing version it returns 404 with 'Version not found'
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject/versions/2",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40402,\"message\":\"Version not found\"}",
+        )
+        .await;
 
-        context "with subject but different schema" {
-            before {
-                let schema2_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
-                let schema2 = SchemaBody{schema: schema2_s};
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema2)),
-                            http::StatusCode::OK, "");
-            }
+    // with version out of bounds it returns 422 with 'Invalid version'
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject/versions/0",
+            None,
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            "{\"error_code\":42202,\"message\":\"Invalid version\"}",
+        )
+        .await;
+    // with existing version it returns list with versions of schemas deleted
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject/versions/1",
+            None,
+            http::StatusCode::OK,
+            "1",
+        )
+        .await;
 
-            it "returns 404 with Subject not found" {
-                server.test(http::Method::POST, "/subjects/test.subject", Some(json!(schema)),
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40403,\"message\":\"Schema not found\"}");
-            }
-        }
-    }
-
-    describe "delete schema version under subject" {
-        context "without subject" {
-            it "returns 404 with 'Subject not found'" {
-                server.test(http::Method::DELETE, "/subjects/test.subject/versions/1", None,
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-            }
-        }
-
-        context "with subject" {
-            before {
-                let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
-                let schema = SchemaBody{schema: schema_s};
-                server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
-                    http::StatusCode::OK, "");
-            }
-
-            context "with non existing version" {
-                it "returns 404 with 'Version not found'" {
-                    server.test(http::Method::DELETE, "/subjects/test.subject/versions/2", None,
-                                http::StatusCode::NOT_FOUND,
-                                "{\"error_code\":40402,\"message\":\"Version not found\"}");
-                }
-            }
-
-            context "with version out of bounds" {
-                it "returns 422 with 'Invalid version'" {
-                    server.test(http::Method::DELETE, "/subjects/test.subject/versions/0", None,
-                                http::StatusCode::UNPROCESSABLE_ENTITY,
-                                "{\"error_code\":42202,\"message\":\"Invalid version\"}");
-                }
-            }
-
-            context "with existing version" {
-                it "returns list with versions of schemas deleted" {
-                    server.test(http::Method::DELETE, "/subjects/test.subject/versions/1", None,
-                                http::StatusCode::OK, "1");
-                }
-            }
-
-            context "with latest version" {
-                context "with one version" {
-                    it "returns version of schema deleted" {
-                        server.test(http::Method::DELETE, "/subjects/test.subject/versions/latest", None,
-                                    http::StatusCode::OK, "1");
-                    }
-                }
-
-                context "with multiple versions" {
-                    before {
-                        let schema_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
-                        let schema = SchemaBody{schema: schema_s};
-                        server.test(http::Method::POST, "/subjects/test.subject/versions", Some(json!(schema)),
-                                    http::StatusCode::OK, "");
-                    }
-                    it "returns version of schema deleted" {
-                        server.test(http::Method::DELETE, "/subjects/test.subject/versions/latest", None,
-                                    http::StatusCode::OK, "2");
-                    }
-                }
-            }
-        }
-    }
+    // re-setup before testing with latest
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
+    // with latest version and only one version it returns version of schema deleted
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject/versions/latest",
+            None,
+            http::StatusCode::OK,
+            "1",
+        )
+        .await;
+    // setup for next test
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
+    let schema_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
+    let schema = SchemaBody { schema: schema_s };
+    server
+        .test(
+            http::Method::POST,
+            "/subjects/test.subject/versions",
+            Some(json!(schema)),
+            http::StatusCode::OK,
+            "",
+        )
+        .await;
+    // with latest version and with multiple versions it returns version of schema deleted
+    server
+        .test(
+            http::Method::DELETE,
+            "/subjects/test.subject/versions/latest",
+            None,
+            http::StatusCode::OK,
+            "2",
+        )
+        .await;
 }

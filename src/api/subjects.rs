@@ -1,9 +1,7 @@
 use actix_web::{
-    web,
     web::{Data, Json, Path},
-    HttpResponse,
+    HttpResponse, Responder,
 };
-use futures::Future;
 
 use crate::api::{
     errors::{ApiAvroErrorCode, ApiError},
@@ -15,49 +13,33 @@ use crate::db::models::{
 };
 use crate::db::{DbManage, DbPool};
 
-pub fn get_subjects(db: Data<DbPool>) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    web::block(move || {
-        let conn = db.connection()?;
-        Subject::distinct_names(&conn).map(|content| SubjectList { content })
-    })
-    .from_err()
-    .then(|res| match res {
+pub async fn get_subjects(db: Data<DbPool>) -> impl Responder {
+    let conn = db.connection()?;
+    match Subject::distinct_names(&conn).map(|content| SubjectList { content }) {
         Ok(subjects) => Ok(HttpResponse::Ok().json(subjects.content)),
         Err(e) => Err(e),
-    })
+    }
 }
 
-pub fn get_subject_versions(
-    subject: Path<String>,
-    db: Data<DbPool>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
+pub async fn get_subject_versions(subject: Path<String>, db: Data<DbPool>) -> impl Responder {
     //subject.into_inner()
-    web::block(move || {
-        let conn = db.connection()?;
-        SchemaVersion::versions_with_subject_name(&conn, subject.into_inner())
-            .map(|versions| SubjectVersionsResponse { versions })
-    })
-    .from_err()
-    .then(|res| match res {
+    let conn = db.connection()?;
+    match SchemaVersion::versions_with_subject_name(&conn, subject.into_inner())
+        .map(|versions| SubjectVersionsResponse { versions })
+    {
         Ok(r) => Ok(HttpResponse::Ok().json(r.versions)),
         Err(e) => Err(e),
-    })
+    }
 }
 
-pub fn delete_subject(
-    subject: Path<String>,
-    db: Data<DbPool>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    web::block(move || {
-        let conn = db.connection()?;
-        Subject::delete_by_name(&conn, subject.into_inner())
-            .map(|versions| DeleteSubjectResponse { versions })
-    })
-    .from_err()
-    .then(|res| match res {
+pub async fn delete_subject(subject: Path<String>, db: Data<DbPool>) -> impl Responder {
+    let conn = db.connection()?;
+    match Subject::delete_by_name(&conn, subject.into_inner())
+        .map(|versions| DeleteSubjectResponse { versions })
+    {
         Ok(r) => Ok(HttpResponse::Ok().json(r.versions)),
         Err(e) => Err(e),
-    })
+    }
 }
 
 /// `get_subject_version_from_db` fetches a specific subject version pair from the
@@ -93,84 +75,58 @@ pub(crate) fn get_subject_version_from_db(
 // https://docs.confluent.io/3.1.0/schema-registry/docs/api.html#get--subjects-(string-%20subject)-versions-(versionId-%20version)
 // the Version ID should be in the range of 1 to 2^31-1, which isn't u32. We should create
 // a new type with the boundaries of this.
-pub fn get_subject_version(
-    info: Path<(String, u32)>,
-    db: Data<DbPool>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
+pub async fn get_subject_version(info: Path<(String, u32)>, db: Data<DbPool>) -> impl Responder {
     let q = info.into_inner();
 
-    web::block(move || {
-        let conn = db.connection()?;
-        get_subject_version_from_db(&conn, q.0, Some(q.1))
-    })
-    .from_err()
-    .then(|res| match res {
+    let conn = db.connection()?;
+    match get_subject_version_from_db(&conn, q.0, Some(q.1)) {
         Ok(r) => Ok(HttpResponse::Ok().json(r)),
         Err(e) => Err(e),
-    })
+    }
 }
 
-pub fn get_subject_version_latest(
-    subject: Path<String>,
-    db: Data<DbPool>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    web::block(move || {
-        let conn = db.connection()?;
-        get_subject_version_from_db(&conn, subject.into_inner(), None)
-    })
-    .from_err()
-    .then(|res| match res {
+pub async fn get_subject_version_latest(subject: Path<String>, db: Data<DbPool>) -> impl Responder {
+    let conn = db.connection()?;
+    match get_subject_version_from_db(&conn, subject.into_inner(), None) {
         Ok(r) => Ok(HttpResponse::Ok().json(r)),
         Err(e) => Err(e),
-    })
+    }
 }
 
 // TODO: for now, do the same as for `get_subject_version` and then extract only the
 // schema
-pub fn get_subject_version_schema(
+pub async fn get_subject_version_schema(
     info: Path<(String, u32)>,
     db: Data<DbPool>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
+) -> impl Responder {
     let q = info.into_inner();
 
-    web::block(move || {
-        let conn = db.connection()?;
-        get_subject_version_from_db(&conn, q.0, Some(q.1))
-    })
-    .from_err()
-    .then(|res| match res {
+    let conn = db.connection()?;
+    match get_subject_version_from_db(&conn, q.0, Some(q.1)) {
         Ok(r) => Ok(HttpResponse::Ok().json(SchemaResponse { schema: r.schema })),
         Err(e) => Err(e),
-    })
+    }
 }
 
-pub fn get_subject_version_latest_schema(
+pub async fn get_subject_version_latest_schema(
     subject: Path<String>,
     db: Data<DbPool>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    web::block(move || {
-        let conn = db.connection()?;
-        get_subject_version_from_db(&conn, subject.into_inner(), None)
-    })
-    .from_err()
-    .then(|res| match res {
+) -> impl Responder {
+    let conn = db.connection()?;
+    match get_subject_version_from_db(&conn, subject.into_inner(), None) {
         Ok(r) => Ok(HttpResponse::Ok().json(SchemaResponse { schema: r.schema })),
         Err(e) => Err(e),
-    })
+    }
 }
 
-pub fn post_subject(
+pub async fn post_subject(
     subject: Path<String>,
     body: Json<SchemaBody>,
     db: Data<DbPool>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    web::block(move || {
-        let conn = db.connection()?;
-        Schema::verify_registration(&conn, subject.into_inner(), body.into_inner().schema)
-    })
-    .from_err()
-    .then(|res| match res {
+) -> impl Responder {
+    let conn = db.connection()?;
+    match Schema::verify_registration(&conn, subject.into_inner(), body.into_inner().schema) {
         Ok(response) => Ok(HttpResponse::Ok().json(response)),
         Err(e) => Err(e),
-    })
+    }
 }

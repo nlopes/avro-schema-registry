@@ -12,6 +12,10 @@ travis-ci = { repository = "nlopes/avro-schema-registry", branch = "master" }
 name = "integration"
 path = "tests/tests.rs"
 
+[lib]
+name = "avro_schema_registry"
+path = "src/lib.rs"
+
 [[bin]]
 name = "avro-schema-registry"
 path = "src/bin/main.rs"
@@ -20,12 +24,12 @@ doc = false
 
 [dependencies]
 actix = { version="0.8", features=["http"] }
-actix-http = "0.2"
-actix-rt = "0.2"
-actix-service = "0.4"
-actix-threadpool = "0.1"
-actix-web = "1.0"
-actix-web-prom = "0.1"
+actix-http = "1.0"
+actix-rt = "1.0"
+actix-service = "1.0"
+actix-threadpool = "0.3"
+actix-web = "2.0"
+actix-web-prom = "0.2"
 avro-rs = "0.7"
 base64 = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
@@ -33,7 +37,7 @@ diesel = { version = "1.4", features = ["postgres", "chrono", "r2d2"] }
 env_logger = "0.7"
 failure = "0.1"
 failure_derive = "0.1"
-futures = "0.1"
+futures = "0.3"
 json = "0.12"
 log = "0.4"
 phf = "0.8"
@@ -42,7 +46,3 @@ sentry = "0.17"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-
-[dev-dependencies]
-actix-http-test = "0.2"
-speculate = "0.1"
