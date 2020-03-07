@@ -29,7 +29,7 @@ actix-rt = "1.0"
 actix-service = "1.0"
 actix-threadpool = "0.3"
 actix-web = "2.0"
-actix-web-prom = { version = "0.2", git = "https://github.com/nlopes/actix-web-prom" }
+actix-web-prom = "0.2"
 avro-rs = "0.7"
 base64 = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
