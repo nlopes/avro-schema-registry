@@ -1,3 +1,5 @@
+use avro_rs;
+use avro_rs::schema_compatibility::SchemaCompatibility;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 
@@ -45,6 +47,19 @@ impl Schema {
     fn generate_fingerprint(data: String) -> Result<String, ApiError> {
         use sha2::Sha256;
         Ok(format!("{}", Self::parse(data)?.fingerprint::<Sha256>()))
+    }
+
+    pub(crate) fn is_compatible(
+        readers_schema: &str,
+        writers_schema: &str,
+    ) -> Result<bool, ApiError> {
+        let writers_schema = avro_rs::Schema::parse_str(writers_schema)
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::InvalidAvroSchema))?;
+        let readers_schema = avro_rs::Schema::parse_str(readers_schema)
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::InvalidAvroSchema))?;
+        let a = SchemaCompatibility::can_read(&writers_schema, &readers_schema);
+        dbg!(&a);
+        Ok(a)
     }
 
     pub fn find_by_fingerprint(
