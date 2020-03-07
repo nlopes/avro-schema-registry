@@ -1,104 +1,132 @@
 use actix_web::http;
-use speculate::speculate;
+use serde_json;
 
-speculate! {
-    before {
-        use avro_schema_registry::db::{DbManage, DbPool};
-        use crate::common::server::ApiTesterServer;
-        use crate::db::DbAuxOperations;
+use crate::common::server::setup;
+use crate::db::DbAuxOperations;
 
-        let server = ApiTesterServer::new();
-        let conn = DbPool::new_pool(Some(1)).connection().unwrap();
-        conn.reset();
-    }
+#[actix_rt::test]
+async fn test_get_global_config() {
+    let (server, _) = setup();
 
-    describe "get global config" {
-        it "returns BACKWARD" {
-            server.test(http::Method::GET, "/config", None,
-                        http::StatusCode::OK, "{\"compatibility\":\"BACKWARD\"}");
-        }
-    }
+    // returns compatibility
+    server
+        .test(
+            http::Method::GET,
+            "/config",
+            None,
+            http::StatusCode::OK,
+            "{\"compatibility\":\"BACKWARD\"}",
+        )
+        .await;
+}
 
-    describe "set global config" {
-        context "with valid compatibility FULL" {
-            it "returns FULL" {
-                server.test(http::Method::PUT, "/config", Some(json!({"compatibility": "FULL"})),
-                            http::StatusCode::OK,
-                            "{\"compatibility\":\"FULL\"}");
-            }
-        }
+#[actix_rt::test]
+async fn test_set_global_config_with_valid_compatibility_full() {
+    let (server, _) = setup();
 
-        context "with invalid compatibility" {
-            it "returns 422 with Invalid compatibility level" {
-                server.test(http::Method::PUT, "/config", Some(json!({"compatibility": "NOT_VALID"})),
-                            http::StatusCode::UNPROCESSABLE_ENTITY,
-                            "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}");
-            }
-        }
-    }
+    // returns compatibility
+    server
+        .test(
+            http::Method::PUT,
+            "/config",
+            Some(json!({"compatibility": "FULL"})),
+            http::StatusCode::OK,
+            "{\"compatibility\":\"FULL\"}",
+        )
+        .await;
+}
 
-    describe "get compatibility level" {
-        before {
-            conn.create_test_subject_with_config("FULL");
-        }
-        context "existent subject" {
-            it "returns valid compatibility" {
-                server.test(http::Method::GET, "/config/test.subject", None,
-                            http::StatusCode::OK, "{\"compatibility\":\"FULL\"}");
-            }
-        }
+#[actix_rt::test]
+async fn test_set_global_config_with_invalid_compatibility() {
+    let (server, _) = setup();
+    // returns 422 with Invalid compatibility level
+    server
+        .test(
+            http::Method::PUT,
+            "/config",
+            Some(json!({"compatibility": "NOT_VALID"})),
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}",
+        )
+        .await;
+}
 
-        context "non existent subject" {
-            before {
-                conn.reset_subjects();
-            }
+#[actix_rt::test]
+async fn test_get_compatibility_level_with_existent_subject() {
+    let (server, conn) = setup();
+    conn.create_test_subject_with_config("FULL");
 
-            it "returns 404 with Invalid compatibility level" {
-                server.test(http::Method::GET, "/config/test.subject", None,
-                            http::StatusCode::NOT_FOUND,
-                            "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-            }
-        }
-    }
+    // returns valid compatibility
+    server
+        .test(
+            http::Method::GET,
+            "/config/test.subject",
+            None,
+            http::StatusCode::OK,
+            "{\"compatibility\":\"FULL\"}",
+        )
+        .await;
+}
 
-    describe "update compatibility level" {
-        describe "existing subject" {
-            before {
-                conn.create_test_subject_with_config("FULL");
-            }
+#[actix_rt::test]
+async fn test_get_compatibility_level_with_non_existent_subject() {
+    let (server, conn) = setup();
+    conn.create_test_subject_with_config("FULL");
+    conn.reset_subjects();
 
-            context "with valid compatibility FORWARD_TRANSITIVE" {
-                it "returns FORWARD_TRANSITIVE" {
-                    server.test(http::Method::PUT, "/config/test.subject",
-                                Some(json!({"compatibility": "FORWARD_TRANSITIVE"})),
-                                http::StatusCode::OK,
-                                "{\"compatibility\":\"FORWARD_TRANSITIVE\"}");
-                }
-            }
+    // returns 404 with Invalid compatibility level
+    server
+        .test(
+            http::Method::GET,
+            "/config/test.subject",
+            None,
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
+}
 
-            context "with invalid compatibility" {
-                it "returns 422" {
-                    server.test(http::Method::PUT, "/config/test.subject",
-                                Some(json!({"compatibility": "NOT_VALID"})),
-                                http::StatusCode::UNPROCESSABLE_ENTITY,
-                                "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}");
-                }
-            }
-        }
+#[actix_rt::test]
+async fn test_update_compatibility_level_with_existent_subject() {
+    let (server, conn) = setup();
+    conn.create_test_subject_with_config("FULL");
 
-        describe "non existing subject" {
-            before {
-                conn.reset_subjects();
-            }
+    // with valid compatibility FORWARD_TRANSITIVE it returns FORWARD_TRANSITIVE
+    server
+        .test(
+            http::Method::PUT,
+            "/config/test.subject",
+            Some(json!({"compatibility": "FORWARD_TRANSITIVE"})),
+            http::StatusCode::OK,
+            "{\"compatibility\":\"FORWARD_TRANSITIVE\"}",
+        )
+        .await;
 
-            context "with valid compatibility FULL" {
-                it "returns 404" {
-                    server.test(http::Method::PUT, "/config/test.subject",
-                                Some(json!({"compatibility": "FULL"})),
-                                http::StatusCode::NOT_FOUND,
-                                "{\"error_code\":40401,\"message\":\"Subject not found\"}");
-                }
-            }
-        }
-    }
+    // with invalid compatibility it returns 422
+    server
+        .test(
+            http::Method::PUT,
+            "/config/test.subject",
+            Some(json!({"compatibility": "NOT_VALID"})),
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}",
+        )
+        .await;
+}
+
+#[actix_rt::test]
+async fn test_update_compatibility_level_with_non_existent_subject() {
+    let (server, conn) = setup();
+    conn.reset_subjects();
+
+    // with valid compatibility FULL it returns 404
+    server
+        .test(
+            http::Method::PUT,
+            "/config/test.subject",
+            Some(json!({"compatibility": "FULL"})),
+            http::StatusCode::NOT_FOUND,
+            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+        )
+        .await;
 }

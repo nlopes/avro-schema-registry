@@ -2,8 +2,8 @@ use actix_http::{error::*, http::HeaderMap};
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use base64;
-use futures::future::{ok, Either, FutureResult};
-use futures::Poll;
+use futures::future::{ok, Either, Ready};
+use futures::task::{Context, Poll};
 
 pub struct VerifyAuthorization {
     password: String,
@@ -64,7 +64,7 @@ where
     type Error = S::Error;
     type InitError = ();
     type Transform = VerifyAuthorizationMiddleware<S>;
-    type Future = FutureResult<Self::Transform, Self::InitError>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
         ok(VerifyAuthorizationMiddleware {
@@ -87,16 +87,16 @@ where
     type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = S::Error;
-    type Future = Either<FutureResult<Self::Response, Self::Error>, S::Future>;
+    type Future = Either<Ready<Result<Self::Response, Self::Error>>, S::Future>;
 
-    fn poll_ready(&mut self) -> Poll<(), Self::Error> {
-        self.service.poll_ready()
+    fn poll_ready(&mut self, ct: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(ct)
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         match VerifyAuthorization::validate(req.headers(), &self.password) {
-            Ok(_) => Either::B(self.service.call(req)),
-            Err(_) => Either::A(ok(req.error_response(ParseError::Header))),
+            Ok(_) => Either::Right(self.service.call(req)),
+            Err(_) => Either::Left(ok(req.error_response(ParseError::Header))),
         }
     }
 }
