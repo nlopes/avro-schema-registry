@@ -1,5 +1,4 @@
 use actix_web::http;
-use serde_json;
 
 use crate::common::server::setup;
 use crate::db::DbAuxOperations;
