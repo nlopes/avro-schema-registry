@@ -27,9 +27,9 @@ actix = "0.10"
 actix-http = "2.0"
 actix-service = "1.0"
 actix-threadpool = "0.3"
-actix-web = "3.1"
-actix-web-prom = "0.5"
-avro-rs = "0.11"
+actix-web = "2.0"
+actix-web-prom = "0.2"
+avro-rs = { git = "https://github.com/nlopes/avro-rs", branch = "nlopes/add-schema-compatibility" }
 base64 = "0.12"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4", features = ["postgres", "chrono", "r2d2"] }
