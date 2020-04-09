@@ -25,7 +25,7 @@ doc = false
 [dependencies]
 actix = { version="0.8", features=["http"] }
 actix-http = "1.0"
-actix-rt = "1.0"
+actix-rt = "1.1"
 actix-service = "1.0"
 actix-threadpool = "0.3"
 actix-web = "2.0"
