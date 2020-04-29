@@ -30,7 +30,7 @@ actix-service = "1.0"
 actix-threadpool = "0.3"
 actix-web = "2.0"
 actix-web-prom = "0.2"
-avro-rs = "0.7"
+avro-rs = "0.9"
 base64 = "0.12"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4", features = ["postgres", "chrono", "r2d2"] }
