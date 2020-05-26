@@ -65,7 +65,8 @@ cargo build --release
 
 ## Run
 
-This assumes you have a running PostgreSQL instance (versions 9.5 and above).
+This assumes you have a running PostgreSQL instance (versions 9.5 and above) and
+you've run the diesel setup (with its migrations).
 
 1) Setup env (everything is controlled through environment variables)
 ```
@@ -80,6 +81,7 @@ export SENTRY_URL="http://sentry-url/id" \ # optional
 # If you haven't set PORT, it listens on the default 8080
 cargo run # or the binary after running `cargo build`
 ```
+
 ## Tests
 
 ### Unit
