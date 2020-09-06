@@ -1,3 +1,5 @@
 /target
 **/*.rs.bk
 rls*.log
+development-db
+.projectile
