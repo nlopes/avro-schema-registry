@@ -409,13 +409,13 @@ dependencies = [
 
 [[package]]
 name = "actix-web-prom"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "actix-service 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "prometheus 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -527,7 +527,7 @@ dependencies = [
  "actix-service 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-threadpool 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "actix-web-prom 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-web-prom 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "avro-rs 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.12.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.15 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1798,7 +1798,7 @@ dependencies = [
 
 [[package]]
 name = "prometheus"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2993,7 +2993,7 @@ dependencies = [
 "checksum actix-utils 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "fcf8f5631bf01adec2267808f00e228b761c60c0584cc9fa0b5364f41d147f4e"
 "checksum actix-web 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3158e822461040822f0dbf1735b9c2ce1f95f93b651d7a7aded00b1efbb1f635"
 "checksum actix-web-codegen 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a71bf475cbe07281d0b3696abb48212db118e7e23219f13596ce865235ff5766"
-"checksum actix-web-prom 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "abf286ef30e1cf7f274845fb1270efa1bf949f280fc654e060f1252e4076d0ea"
+"checksum actix-web-prom 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "39cb9a73c670c43e496bcbd5476062a3eb6760209777d5ba364105be65809761"
 "checksum actix_derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0bf5f6d7bf2d220ae8b4a7ae02a572bb35b7c4806b24049af905ab8110de156c"
 "checksum addr2line 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1b6a2d3371669ab3ca9797670853d61402b03d0b4b9ebf33d677dfa720203072"
 "checksum adler 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ee2a4ec343196209d6594e19543ae87a39f96d5534d7174822a3ad825dd6ed7e"
@@ -3154,7 +3154,7 @@ dependencies = [
 "checksum proc-macro-nested 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "eba180dafb9038b050a4c280019bbedf9f2467b61e5d892dcad585bb57aadc5a"
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
 "checksum proc-macro2 1.0.20 (registry+https://github.com/rust-lang/crates.io-index)" = "175c513d55719db99da20232b06cda8bab6b83ec2d04e3283edf0213c37c1a29"
-"checksum prometheus 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b0575e258dab62268e7236d7307caa38848acbda7ec7ab87bd9093791e999d20"
+"checksum prometheus 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "dd0ced56dee39a6e960c15c74dc48849d614586db2eaada6497477af7c7811cd"
 "checksum quick-error 1.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 "checksum quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)" = "6ce23b6b870e8f94f81fb0a363d65d86675884b34a09043c81e5562f11c1f8e1"
 "checksum quote 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)" = "aa563d17ecb180e500da1cfd2b028310ac758de548efdd203e18f283af693f37"
