@@ -8,7 +8,7 @@ use sentry::internals::IntoDsn;
 use avro_schema_registry::app;
 use avro_schema_registry::db::{DbManage, DbPool};
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "actix_web=debug,avro_schema_registry=debug");
     env::set_var("RUST_BACKTRACE", "1");

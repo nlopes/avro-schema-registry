@@ -1,4 +1,4 @@
-use actix_web::http;
+use actix_web::{http, rt as actix_rt};
 
 use crate::common::server::setup;
 use crate::db::DbAuxOperations;
