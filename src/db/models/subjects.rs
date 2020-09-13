@@ -19,7 +19,7 @@ impl Subject {
     ///
     /// *Note:* 'ignore' in the case above means we will update the name if it already
     /// exists. This spares us complicated code to fetch, verify and then insert.
-    pub fn insert(conn: &PgConnection, subject: String) -> Result<Subject, ApiError> {
+    pub fn insert(conn: &PgConnection, subject: String) -> Result<Self, ApiError> {
         use super::schema::subjects::dsl::*;
 
         diesel::insert_into(subjects)
@@ -31,7 +31,7 @@ impl Subject {
             .on_conflict(name)
             .do_update()
             .set(name.eq(&subject))
-            .get_result::<Subject>(conn)
+            .get_result::<Self>(conn)
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
@@ -46,7 +46,7 @@ impl Subject {
 
     pub fn get_by_name(conn: &PgConnection, subject: String) -> Result<Self, ApiError> {
         use super::schema::subjects::dsl::{name, subjects};
-        match subjects.filter(name.eq(subject)).first::<Subject>(conn) {
+        match subjects.filter(name.eq(subject)).first::<Self>(conn) {
             Ok(s) => Ok(s),
             Err(diesel::result::Error::NotFound) => {
                 Err(ApiError::new(ApiAvroErrorCode::SubjectNotFound))
@@ -61,7 +61,7 @@ impl Subject {
     ) -> Result<Vec<Option<i32>>, ApiError> {
         use super::SchemaVersion;
 
-        match SchemaVersion::delete_subject_with_name(&conn, subject_name) {
+        match SchemaVersion::delete_subject_with_name(conn, subject_name) {
             Err(_) => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
             Ok(res) => {
                 if !res.is_empty() {

@@ -28,11 +28,11 @@ pub struct NewSchemaVersion {
 pub type SchemaVersionFields = NewSchemaVersion;
 
 impl SchemaVersion {
-    pub fn insert(conn: &PgConnection, sv: NewSchemaVersion) -> Result<SchemaVersion, ApiError> {
+    pub fn insert(conn: &PgConnection, sv: NewSchemaVersion) -> Result<Self, ApiError> {
         use super::schema::schema_versions::dsl::schema_versions;
         diesel::insert_into(schema_versions)
             .values(&sv)
-            .get_result::<SchemaVersion>(conn)
+            .get_result::<Self>(conn)
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
@@ -40,14 +40,14 @@ impl SchemaVersion {
         conn: &PgConnection,
         find_subject_id: i64,
         find_schema_id: i64,
-    ) -> Result<SchemaVersion, ApiError> {
+    ) -> Result<Self, ApiError> {
         use super::schema::schema_versions::dsl::{schema_id, schema_versions, subject_id};
 
         schema_versions
             .filter(subject_id.eq(find_subject_id))
             .filter(schema_id.eq(find_schema_id))
-            .get_result::<SchemaVersion>(conn)
-            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::VersionNotFound)))
+            .get_result::<Self>(conn)
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::VersionNotFound))
     }
 
     pub fn with_schema_and_subject(
@@ -206,10 +206,10 @@ impl SchemaVersion {
                 .inner_join(schemas.on(schema_id.eq(schemas_id)))
                 .filter(name.eq(&subject))
                 .select((id, version, subject_id, schema_id))
-                .load::<SchemaVersion>(conn)?
+                .load::<Self>(conn)?
                 .into_iter()
                 .map(|entry| {
-                    if let Err(e) = entry.delete(&conn) {
+                    if let Err(e) = entry.delete(conn) {
                         info!("error deleting: {}", e);
                     }
                     entry.version
@@ -249,9 +249,9 @@ impl SchemaVersion {
 
         conn.transaction::<_, ApiError, _>(|| {
             Subject::get_by_name(conn, subject.to_owned()).and_then(|subject| {
-                diesel::delete(SchemaVersion::belonging_to(&subject).filter(version.eq(v as i32)))
+                diesel::delete(Self::belonging_to(&subject).filter(version.eq(v as i32)))
                     .execute(conn)
-                    .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)))
+                    .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
                     .and_then(|o| match o {
                         0 => Err(ApiError::new(ApiAvroErrorCode::VersionNotFound)),
                         _ => Ok(v as u32),

@@ -45,7 +45,7 @@ pub async fn delete_subject(subject: Path<String>, db: Data<DbPool>) -> impl Res
 /// `get_subject_version_from_db` fetches a specific subject version pair from the
 /// database, given a subject name and an optional version. If the version is not given,
 /// then we get the latest schema id.
-pub(crate) fn get_subject_version_from_db(
+pub fn get_subject_version_from_db(
     conn: &diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>,
     subject: String,
     version: Option<u32>,
@@ -57,9 +57,9 @@ pub(crate) fn get_subject_version_from_db(
             if !v.within_limits() {
                 return Err(ApiError::new(ApiAvroErrorCode::InvalidVersion));
             }
-            SchemaVersion::get_schema_id(&conn, subject.to_string(), v)
+            SchemaVersion::get_schema_id(conn, subject.to_string(), v)
         }
-        None => SchemaVersion::get_schema_id_from_latest(&conn, subject.to_string()),
+        None => SchemaVersion::get_schema_id_from_latest(conn, subject.to_string()),
     }
     .map(|o| GetSubjectVersionResponse {
         subject: subject.to_string(),

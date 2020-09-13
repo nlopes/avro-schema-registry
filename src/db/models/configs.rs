@@ -38,13 +38,13 @@ pub enum CompatibilityLevel {
 impl fmt::Display for CompatibilityLevel {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let screaming_snake_case = match self {
-            CompatibilityLevel::Backward => Ok("BACKWARD"),
-            CompatibilityLevel::BackwardTransitive => Ok("BACKWARD_TRANSITIVE"),
-            CompatibilityLevel::Forward => Ok("FORWARD"),
-            CompatibilityLevel::ForwardTransitive => Ok("FORWARD_TRANSITIVE"),
-            CompatibilityLevel::Full => Ok("FULL"),
-            CompatibilityLevel::FullTransitive => Ok("FULL_TRANSITIVE"),
-            CompatibilityLevel::CompatNone => Ok("NONE"),
+            Self::Backward => Ok("BACKWARD"),
+            Self::BackwardTransitive => Ok("BACKWARD_TRANSITIVE"),
+            Self::Forward => Ok("FORWARD"),
+            Self::ForwardTransitive => Ok("FORWARD_TRANSITIVE"),
+            Self::Full => Ok("FULL"),
+            Self::FullTransitive => Ok("FULL_TRANSITIVE"),
+            Self::CompatNone => Ok("NONE"),
             // This won't ever be parsed, so we're fine by leaving this empty
             _ => Ok(""),
         }?;
@@ -55,15 +55,15 @@ impl fmt::Display for CompatibilityLevel {
 impl str::FromStr for CompatibilityLevel {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<CompatibilityLevel, ()> {
+    fn from_str(s: &str) -> Result<Self, ()> {
         match s {
-            "BACKWARD" => Ok(CompatibilityLevel::Backward),
-            "BACKWARD_TRANSITIVE" => Ok(CompatibilityLevel::BackwardTransitive),
-            "FORWARD" => Ok(CompatibilityLevel::Forward),
-            "FORWARD_TRANSITIVE" => Ok(CompatibilityLevel::ForwardTransitive),
-            "FULL" => Ok(CompatibilityLevel::Full),
-            "FULL_TRANSITIVE" => Ok(CompatibilityLevel::FullTransitive),
-            "NONE" => Ok(CompatibilityLevel::CompatNone),
+            "BACKWARD" => Ok(Self::Backward),
+            "BACKWARD_TRANSITIVE" => Ok(Self::BackwardTransitive),
+            "FORWARD" => Ok(Self::Forward),
+            "FORWARD_TRANSITIVE" => Ok(Self::ForwardTransitive),
+            "FULL" => Ok(Self::Full),
+            "FULL_TRANSITIVE" => Ok(Self::FullTransitive),
+            "NONE" => Ok(Self::CompatNone),
             _ => Err(()),
         }
     }
@@ -75,7 +75,7 @@ impl CompatibilityLevel {
     ///
     /// [`Ok`]: enum.Result.html#variant.Ok
     /// [`Err`]: enum.Result.html#variant.Err
-    pub fn valid(self) -> Result<CompatibilityLevel, ApiError> {
+    pub fn valid(self) -> Result<Self, ApiError> {
         ConfigCompatibility::new(self.to_string()).and(Ok(self))
     }
 }
@@ -86,7 +86,7 @@ pub struct ConfigCompatibility {
 }
 
 impl ConfigCompatibility {
-    pub fn new(level: String) -> Result<ConfigCompatibility, ApiError> {
+    pub fn new(level: String) -> Result<Self, ApiError> {
         match level.parse::<CompatibilityLevel>() {
             Ok(l) => Ok(Self { compatibility: l }),
             Err(_) => Err(ApiError::new(ApiAvroErrorCode::InvalidCompatibilityLevel)),
@@ -115,7 +115,7 @@ impl Config {
     /// compatibility level
     pub fn get_global_compatibility(conn: &PgConnection) -> Result<String, ApiError> {
         use super::schema::configs::dsl::*;
-        match configs.filter(id.eq(0)).get_result::<Config>(conn) {
+        match configs.filter(id.eq(0)).get_result::<Self>(conn) {
             // This should always return ok. If it doesn't, that means someone manually
             // edited the configs entry with id 0. Not only that, but they set the column
             // compatibility to NULL. Because of that, we don't try to fix it (although we
@@ -128,7 +128,7 @@ impl Config {
                 //
                 // a) first time we try to get a config, so we should set a default
                 // b) database was manually modified and we should set a default again
-                Config::insert(&Self::DEFAULT_COMPATIBILITY.to_string(), conn)?;
+                Self::insert(&Self::DEFAULT_COMPATIBILITY.to_string(), conn)?;
                 Ok(Self::DEFAULT_COMPATIBILITY.to_string())
             }
             _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
@@ -140,7 +140,7 @@ impl Config {
         subject_name: String,
     ) -> Result<String, ApiError> {
         let subject = Subject::get_by_name(conn, subject_name)?;
-        match Config::belonging_to(&subject).get_result::<Config>(conn) {
+        match Self::belonging_to(&subject).get_result::<Self>(conn) {
             // This should always return ok. If it doesn't, that means someone manually
             // edited the configs entry with id 0. Not only that, but they set the column
             // compatibility to NULL. Because of that, we don't try to fix it (although we
@@ -160,11 +160,11 @@ impl Config {
         use super::schema::configs::dsl::*;
 
         let subject = Subject::get_by_name(conn, subject_name)?;
-        match Config::belonging_to(&subject).get_result::<Config>(conn) {
+        match Self::belonging_to(&subject).get_result::<Self>(conn) {
             Ok(config) => {
                 match diesel::update(&config)
                     .set(compatibility.eq(&compat))
-                    .get_result::<Config>(conn)
+                    .get_result::<Self>(conn)
                 {
                     Ok(conf) => conf
                         .compatibility
@@ -181,7 +181,7 @@ impl Config {
                         subject_id.eq(subject.id),
                     ))
                     .execute(conn)
-                    .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)))?;
+                    .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))?;
                 Ok(compat)
             }
             _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
@@ -196,7 +196,7 @@ impl Config {
 
         match diesel::update(configs.find(0))
             .set(compatibility.eq(compat))
-            .get_result::<Config>(conn)
+            .get_result::<Self>(conn)
         {
             Ok(config) => config
                 .compatibility
@@ -206,7 +206,7 @@ impl Config {
                 //
                 // a) first time we try to get a config, so we should set a default
                 // b) database was manually modified and we should set a default again
-                Config::insert(compat, conn)?;
+                Self::insert(compat, conn)?;
                 Ok(compat.to_string())
             }
             _ => Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)),
@@ -224,6 +224,6 @@ impl Config {
                 updated_at.eq(diesel::dsl::now),
             ))
             .execute(conn)
-            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::BackendDatastoreError)))
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 }

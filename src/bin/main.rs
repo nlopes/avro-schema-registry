@@ -1,9 +1,7 @@
 use std::env;
 
-use actix_rt;
 use actix_web::{middleware::Logger, App, HttpServer};
 use actix_web_prom::PrometheusMetrics;
-use sentry;
 use sentry::integrations::panic::register_panic_handler;
 use sentry::internals::IntoDsn;
 

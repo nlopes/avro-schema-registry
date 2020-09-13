@@ -1,11 +1,9 @@
-use avro_rs;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 use super::schema::*;
-
 use super::{GetSubjectVersionResponse, NewSchemaVersion, SchemaVersion, Subject};
 
 #[derive(Debug, Identifiable, Associations, Queryable)]
@@ -46,17 +44,17 @@ impl Schema {
 
     fn generate_fingerprint(data: String) -> Result<String, ApiError> {
         use sha2::Sha256;
-        Ok(format!("{}", Schema::parse(data)?.fingerprint::<Sha256>()))
+        Ok(format!("{}", Self::parse(data)?.fingerprint::<Sha256>()))
     }
 
     pub fn find_by_fingerprint(
         conn: &PgConnection,
         fingerprint: String,
-    ) -> Result<Option<Schema>, ApiError> {
+    ) -> Result<Option<Self>, ApiError> {
         use super::schema::schemas::dsl::{fingerprint2, schemas};
         Ok(schemas
             .filter(fingerprint2.eq(fingerprint))
-            .load::<Schema>(conn)
+            .load::<Self>(conn)
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))?
             .pop())
     }
@@ -64,20 +62,20 @@ impl Schema {
     pub fn register_new_version(
         conn: &PgConnection,
         registration: RegisterSchema,
-    ) -> Result<Schema, ApiError> {
+    ) -> Result<Self, ApiError> {
         let (subject, json) = (registration.subject, registration.schema);
-        let fingerprint = Schema::generate_fingerprint(json.to_owned())?;
+        let fingerprint = Self::generate_fingerprint(json.to_owned())?;
 
         conn.transaction::<_, ApiError, _>(|| {
-            let db_schema = Schema::find_by_fingerprint(&conn, fingerprint.to_owned())?;
+            let db_schema = Self::find_by_fingerprint(conn, fingerprint.to_owned())?;
             match db_schema {
                 Some(s) => {
                     match SchemaVersion::with_schema_and_subject(conn, subject.to_owned(), s.id)? {
                         1 => Ok(s),
-                        _ => Schema::create_new_version(conn, None, fingerprint, subject, Some(s)),
+                        _ => Self::create_new_version(conn, None, fingerprint, subject, Some(s)),
                     }
                 }
-                None => Schema::create_new_version(conn, Some(json), fingerprint, subject, None),
+                None => Self::create_new_version(conn, Some(json), fingerprint, subject, None),
             }
         })
     }
@@ -87,8 +85,8 @@ impl Schema {
         json: Option<String>,
         fingerprint: String,
         subject_name: String,
-        db_schema: Option<Schema>,
-    ) -> Result<Schema, ApiError> {
+        db_schema: Option<Self>,
+    ) -> Result<Self, ApiError> {
         let latest =
             SchemaVersion::latest_version_with_subject_name(conn, subject_name.to_owned())?;
 
@@ -99,7 +97,7 @@ impl Schema {
                 // TODO: Check compatibility first - implementation should be mostly in
                 // https://github.com/flavray/avro-rs
                 let sch = match json {
-                    Some(j) => Schema::new(conn, j, fingerprint)?,
+                    Some(j) => Self::new(conn, j, fingerprint)?,
                     None => db_schema
                         .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))?,
                 };
@@ -108,7 +106,7 @@ impl Schema {
             None => {
                 // Create schema version for subject
                 let sch = match json {
-                    Some(j) => Schema::new(conn, j, fingerprint)?,
+                    Some(j) => Self::new(conn, j, fingerprint)?,
                     None => db_schema
                         .ok_or_else(|| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))?,
                 };
@@ -128,7 +126,7 @@ impl Schema {
         Ok(schema)
     }
 
-    pub fn new(conn: &PgConnection, json: String, fingerprint: String) -> Result<Schema, ApiError> {
+    pub fn new(conn: &PgConnection, json: String, fingerprint: String) -> Result<Self, ApiError> {
         // TODO: we use the same in both fields. This means we don't do the same as
         // salsify
         let new_schema = NewSchema {
@@ -139,14 +137,14 @@ impl Schema {
             updated_at: Utc::now().naive_utc(),
         };
 
-        Schema::insert(conn, new_schema)
+        Self::insert(conn, new_schema)
     }
 
-    pub fn insert(conn: &PgConnection, schema: NewSchema) -> Result<Schema, ApiError> {
+    pub fn insert(conn: &PgConnection, schema: NewSchema) -> Result<Self, ApiError> {
         use super::schema::schemas::dsl::*;
         diesel::insert_into(schemas)
             .values(&schema)
-            .get_result::<Schema>(conn)
+            .get_result::<Self>(conn)
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
@@ -154,16 +152,16 @@ impl Schema {
         use super::schema::schemas::dsl::*;
         schemas
             .filter(json.eq(data))
-            .get_result::<Schema>(conn)
-            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::SchemaNotFound)))
+            .get_result::<Self>(conn)
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::SchemaNotFound))
     }
 
-    pub fn get_by_id(conn: &PgConnection, schema_id: i64) -> Result<Schema, ApiError> {
+    pub fn get_by_id(conn: &PgConnection, schema_id: i64) -> Result<Self, ApiError> {
         use super::schema::schemas::dsl::*;
         schemas
             .find(schema_id)
-            .get_result::<Schema>(conn)
-            .or_else(|_| Err(ApiError::new(ApiAvroErrorCode::SchemaNotFound)))
+            .get_result::<Self>(conn)
+            .map_err(|_| ApiError::new(ApiAvroErrorCode::SchemaNotFound))
     }
 
     pub fn verify_registration(
@@ -173,7 +171,7 @@ impl Schema {
     ) -> Result<VerifyRegistrationResponse, ApiError> {
         conn.transaction::<_, ApiError, _>(|| {
             Subject::get_by_name(conn, subject_name.to_string()).and_then(|subject| {
-                Schema::get_by_json(conn, schema_json.to_string()).and_then(|schema| {
+                Self::get_by_json(conn, schema_json.to_string()).and_then(|schema| {
                     SchemaVersion::find(conn, subject.id, schema.id).and_then(|schema_version| {
                         Ok(VerifyRegistrationResponse {
                             subject: subject.name,

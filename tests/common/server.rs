@@ -15,7 +15,7 @@ use avro_schema_registry::db::{DbConnection, DbManage, DbPool};
 
 pub struct ApiTesterServer(test::TestServer);
 
-pub(crate) fn setup() -> (ApiTesterServer, DbConnection) {
+pub fn setup() -> (ApiTesterServer, DbConnection) {
     let server = ApiTesterServer::new();
     let conn = DbPool::new_pool(Some(1)).connection().unwrap();
     conn.reset();
@@ -24,7 +24,7 @@ pub(crate) fn setup() -> (ApiTesterServer, DbConnection) {
 }
 
 impl ApiTesterServer {
-    pub fn new() -> ApiTesterServer {
+    pub fn new() -> Self {
         Self(test::start(|| {
             App::new()
                 .configure(app::monitoring_routing)
@@ -41,7 +41,7 @@ impl ApiTesterServer {
         expected_status: http::StatusCode,
         expected_body: &str,
     ) {
-        let ApiTesterServer(server) = self;
+        let Self(server) = self;
         let req = server.request(method, server.url(path)).avro_headers();
 
         match request_body {

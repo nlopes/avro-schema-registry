@@ -1,7 +1,6 @@
 use actix_http::{error::*, http::HeaderMap};
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
-use base64;
 use futures::future::{ok, Either, Ready};
 use futures::task::{Context, Poll};
 
@@ -10,8 +9,8 @@ pub struct VerifyAuthorization {
 }
 
 impl VerifyAuthorization {
-    pub fn new(password: &str) -> VerifyAuthorization {
-        VerifyAuthorization {
+    pub fn new(password: &str) -> Self {
+        Self {
             password: password.to_string(),
         }
     }

@@ -1,7 +1,4 @@
-use actix;
-use actix_threadpool;
 use actix_web::{http::StatusCode, HttpResponse};
-use serde_json;
 
 // TODO: maybe replace this with serde_aux::serde_aux_enum_number_declare
 macro_rules! enum_number {
@@ -38,21 +35,19 @@ enum_number!(ApiAvroErrorCode {
 });
 
 impl ApiAvroErrorCode {
-    pub fn message(&self) -> &str {
+    pub const fn message(&self) -> &str {
         match self {
-            ApiAvroErrorCode::SubjectNotFound => "Subject not found",
-            ApiAvroErrorCode::VersionNotFound => "Version not found",
-            ApiAvroErrorCode::SchemaNotFound => "Schema not found",
+            Self::SubjectNotFound => "Subject not found",
+            Self::VersionNotFound => "Version not found",
+            Self::SchemaNotFound => "Schema not found",
 
-            ApiAvroErrorCode::InvalidAvroSchema => "Invalid Avro schema",
-            ApiAvroErrorCode::InvalidVersion => "Invalid version",
-            ApiAvroErrorCode::InvalidCompatibilityLevel => "Invalid compatibility level",
+            Self::InvalidAvroSchema => "Invalid Avro schema",
+            Self::InvalidVersion => "Invalid version",
+            Self::InvalidCompatibilityLevel => "Invalid compatibility level",
 
-            ApiAvroErrorCode::BackendDatastoreError => "Error in the backend datastore",
-            ApiAvroErrorCode::OperationTimedOut => "Operation timed out",
-            ApiAvroErrorCode::MasterForwardingError => {
-                "Error while forwarding the request to the master"
-            }
+            Self::BackendDatastoreError => "Error in the backend datastore",
+            Self::OperationTimedOut => "Operation timed out",
+            Self::MasterForwardingError => "Error while forwarding the request to the master",
         }
     }
 }
@@ -86,7 +81,7 @@ impl ApiError {
             ApiAvroErrorCode::MasterForwardingError => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
-        ApiError {
+        Self {
             status_code,
             response: ApiErrorResponse {
                 error_code,
@@ -135,27 +130,27 @@ impl std::error::Error for ApiAvroErrorCode {
 
 impl std::convert::From<diesel::result::Error> for ApiAvroErrorCode {
     fn from(_error: diesel::result::Error) -> Self {
-        ApiAvroErrorCode::BackendDatastoreError
+        Self::BackendDatastoreError
     }
 }
 
 impl std::convert::From<diesel::result::Error> for ApiError {
     fn from(_error: diesel::result::Error) -> Self {
-        ApiError::new(ApiAvroErrorCode::BackendDatastoreError)
+        Self::new(ApiAvroErrorCode::BackendDatastoreError)
     }
 }
 
 impl std::convert::From<actix::MailboxError> for ApiError {
     fn from(_error: actix::MailboxError) -> Self {
-        ApiError::new(ApiAvroErrorCode::BackendDatastoreError)
+        Self::new(ApiAvroErrorCode::BackendDatastoreError)
     }
 }
 
 impl std::convert::From<actix_threadpool::BlockingError<ApiError>> for ApiError {
-    fn from(error: actix_threadpool::BlockingError<ApiError>) -> Self {
+    fn from(error: actix_threadpool::BlockingError<Self>) -> Self {
         match error {
             actix_threadpool::BlockingError::Canceled => {
-                ApiError::new(ApiAvroErrorCode::BackendDatastoreError)
+                Self::new(ApiAvroErrorCode::BackendDatastoreError)
             }
             actix_threadpool::BlockingError::Error(e) => e,
         }
