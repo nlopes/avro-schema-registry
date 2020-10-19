@@ -33,7 +33,7 @@ avro-rs = "0.11"
 base64 = "0.12"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4", features = ["postgres", "chrono", "r2d2"] }
-env_logger = "0.7"
+env_logger = "0.8"
 failure = "0.1"
 failure_derive = "0.1"
 futures = "0.3"
