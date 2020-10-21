@@ -27,8 +27,10 @@ impl VerifyAuthorization {
             return Err(ErrorBadRequest(ParseError::Header));
         }
 
-        //TODO: is it worth checking basic matches "Basic"? I don't think so
-        let (_basic, base64_auth) = authorization.split_at(6);
+        let (basic, base64_auth) = authorization.split_at(6);
+        if basic.ne("Basic ") {
+            return Err(ErrorBadRequest(ParseError::Header));
+        }
 
         match base64::decode(base64_auth) {
             Ok(bytes) => {
