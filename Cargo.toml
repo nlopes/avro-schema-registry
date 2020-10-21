@@ -30,7 +30,7 @@ actix-threadpool = "0.3"
 actix-web = "3.1"
 actix-web-prom = "0.5"
 avro-rs = "0.11"
-base64 = "0.12"
+base64 = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4", features = ["postgres", "chrono", "r2d2"] }
 env_logger = "0.8"
