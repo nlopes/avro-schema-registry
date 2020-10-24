@@ -58,7 +58,6 @@ impl Schema {
         let readers_schema = avro_rs::Schema::parse_str(readers_schema)
             .map_err(|_| ApiError::new(ApiAvroErrorCode::InvalidAvroSchema))?;
         let a = SchemaCompatibility::can_read(&writers_schema, &readers_schema);
-        dbg!(&a);
         Ok(a)
     }
 
