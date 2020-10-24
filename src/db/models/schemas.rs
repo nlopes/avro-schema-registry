@@ -1,4 +1,3 @@
-use avro_rs;
 use avro_rs::schema_compatibility::SchemaCompatibility;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
