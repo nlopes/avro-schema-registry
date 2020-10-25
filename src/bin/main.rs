@@ -2,7 +2,6 @@ use std::env;
 
 use actix_web::{middleware::Logger, App, HttpServer};
 use actix_web_prom::PrometheusMetrics;
-use sentry::integrations::panic::register_panic_handler;
 use sentry::internals::IntoDsn;
 
 use avro_schema_registry::app;
@@ -19,8 +18,8 @@ async fn main() -> std::io::Result<()> {
         release: Some(std::borrow::Cow::Borrowed(env!("CARGO_PKG_VERSION"))),
         ..Default::default()
     });
-    register_panic_handler();
 
+    let _integration = sentry_panic::PanicIntegration::default().add_extractor(|_info| None);
     let prometheus = PrometheusMetrics::new("avro_schema_registry", Some("/_/metrics"), None);
 
     HttpServer::new(move || {
