@@ -2,7 +2,8 @@ use std::env;
 
 use actix_web::{middleware::Logger, App, HttpServer};
 use actix_web_prom::PrometheusMetrics;
-use sentry::internals::IntoDsn;
+use sentry::integrations::panic as sentry_panic;
+use sentry::IntoDsn;
 
 use avro_schema_registry::app;
 use avro_schema_registry::db::{DbManage, DbPool};
