@@ -31,7 +31,7 @@ using this service as your API.
 
 | Endpoint | Method | Maturity |
 |---|---|---|
-| `/compatibility/subjects/{subject}/versions/{version}` | POST | Unimplemented |
+| `/compatibility/subjects/{subject}/versions/{version}` | POST | Ready (NONE, BACKWARD, FORWARD, FULL); Unimplemented (TRANSITIVE) |
 | `/config` | GET | Ready |
 | `/config` | PUT | Ready |
 | `/config/{subject}` | GET | Ready |

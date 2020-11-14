@@ -11,6 +11,11 @@
         {
             "type": "string",
             "name": "field2"
+        },
+        {
+            "type": "string",
+            "name": "extra"
         }
+
     ]
 }

@@ -5,12 +5,13 @@
     [
         {
             "type": "string",
-            "name": "field1",
-            "default": ""
+            "name": "field2"
         },
         {
             "type": "string",
-            "name": "field2"
+            "name": "extra",
+            "default": ""
         }
+
     ]
 }

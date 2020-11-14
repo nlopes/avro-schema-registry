@@ -7,10 +7,6 @@
             "type": "string",
             "name": "field1",
             "default": ""
-        },
-        {
-            "type": "string",
-            "name": "field2"
         }
     ]
 }
