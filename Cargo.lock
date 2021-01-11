@@ -288,15 +288,15 @@ dependencies = [
 
 [[package]]
 name = "actix-web-prom"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06c15667d3609eb3edaf95eae2fe58604d24e16c7756d900e73a5ad04045b9c5"
+checksum = "ec994b7dd52e686b9ae8f63bc485e6027fb44b936ed09bdf648495b9966c36ce"
 dependencies = [
  "actix-http",
  "actix-service",
  "actix-web",
  "futures",
- "pin-project 0.4.27",
+ "pin-project 1.0.1",
  "prometheus",
 ]
 
@@ -1653,11 +1653,11 @@ dependencies = [
 
 [[package]]
 name = "prometheus"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30d70cf4412832bcac9cffe27906f4a66e450d323525e977168c70d1b36120ae"
+checksum = "c8425533e7122f0c3cc7a37e6244b16ad3a2cc32ae7ac6276e2a75da0d9c200d"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "fnv",
  "lazy_static",
  "parking_lot",
