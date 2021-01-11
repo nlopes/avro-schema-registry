@@ -24,10 +24,10 @@ doc = false
 
 [dependencies]
 actix = "0.10"
-actix-http = "2.1"
+actix-http = "2.2"
 actix-service = "1.0"
 actix-threadpool = "0.3"
-actix-web = "3.2"
+actix-web = "3.3"
 actix-web-prom = "0.5"
 avro-rs = "0.12"
 base64 = "0.13"
