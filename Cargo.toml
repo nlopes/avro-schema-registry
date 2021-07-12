@@ -23,7 +23,7 @@ test = false
 doc = false
 
 [dependencies]
-actix = "0.11"
+actix = "0.12"
 actix-http = "2.2"
 actix-service = "1.0"
 actix-threadpool = "0.3"
