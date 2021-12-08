@@ -40,7 +40,7 @@ futures = "0.3"
 json = "0.12"
 log = "0.4"
 phf = "0.9"
-sha2 = "0.9"
+sha2 = "0.10"
 sentry = { version = "0.23", features = ["panic"] }
 serde = "1.0"
 serde_derive = "1.0"
