@@ -1,6 +1,6 @@
-use actix_http::{error::*, http::HeaderMap};
-use actix_service::{Service, Transform};
-use actix_web::dev::{ServiceRequest, ServiceResponse};
+use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::error::{Error, ErrorBadRequest, ErrorForbidden, ParseError};
+use actix_web::http::header::HeaderMap;
 use futures::future::{ok, Either, Ready};
 use futures::task::{Context, Poll};
 
@@ -55,12 +55,11 @@ impl VerifyAuthorization {
     }
 }
 
-impl<S> Transform<S> for VerifyAuthorization
+impl<S> Transform<S, ServiceRequest> for VerifyAuthorization
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
+    S: Service<ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
-    type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = S::Error;
     type InitError = ();
@@ -80,21 +79,20 @@ pub struct VerifyAuthorizationMiddleware<S> {
     password: String,
 }
 
-impl<S> Service for VerifyAuthorizationMiddleware<S>
+impl<S> Service<ServiceRequest> for VerifyAuthorizationMiddleware<S>
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
+    S: Service<ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
-    type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = S::Error;
     type Future = Either<Ready<Result<Self::Response, Self::Error>>, S::Future>;
 
-    fn poll_ready(&mut self, ct: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&self, ct: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.service.poll_ready(ct)
     }
 
-    fn call(&mut self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, req: ServiceRequest) -> Self::Future {
         match VerifyAuthorization::validate(req.headers(), &self.password) {
             Ok(_) => Either::Right(self.service.call(req)),
             Err(_) => Either::Left(ok(req.error_response(ParseError::Header))),
@@ -105,7 +103,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::VerifyAuthorization;
-    use actix_http::http::{header, HeaderMap, HeaderValue};
+    use actix_web::http::header::{self, HeaderMap, HeaderValue};
 
     const VALID_PASSWORD: &str = "some_password";
     const INVALID_PASSWORD: &str = "some_invalid_password";

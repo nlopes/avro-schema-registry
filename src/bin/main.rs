@@ -1,7 +1,11 @@
 use std::env;
 
-use actix_web::{middleware::Logger, App, HttpServer};
-use actix_web_prom::PrometheusMetrics;
+use actix_web::{
+    middleware::{Compat, Logger},
+    web::Data,
+    App, HttpServer,
+};
+use actix_web_prom::PrometheusMetricsBuilder;
 use sentry::integrations::panic as sentry_panic;
 use sentry::IntoDsn;
 
@@ -21,16 +25,19 @@ async fn main() -> std::io::Result<()> {
     });
 
     let _integration = sentry_panic::PanicIntegration::default().add_extractor(|_info| None);
-    let prometheus = PrometheusMetrics::new("avro_schema_registry", Some("/_/metrics"), None);
+    let prometheus = PrometheusMetricsBuilder::new("avro_schema_registry")
+        .endpoint("/_/metrics")
+        .build()
+        .unwrap();
 
     HttpServer::new(move || {
         let db_pool = DbPool::new_pool(None);
 
         App::new()
-            .wrap(Logger::default())
+            .wrap(Compat::new(Logger::default()))
             .wrap(prometheus.clone())
             .configure(app::monitoring_routing)
-            .data(db_pool)
+            .app_data(Data::new(db_pool))
             .configure(app::api_routing)
     })
     .bind(env::var("DEFAULT_HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string()))?

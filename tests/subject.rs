@@ -1,7 +1,8 @@
-use actix_web::{http, rt as actix_rt};
+use actix_web::http;
 
 use crate::common::server::setup;
 use crate::db::DbAuxOperations;
+
 use avro_schema_registry::api::SchemaBody;
 
 #[actix_rt::test]
@@ -15,7 +16,7 @@ async fn test_get_subjects_without_subjects() {
             "/subjects",
             None,
             http::StatusCode::OK,
-            "[]",
+            r#"\[\]"#,
         )
         .await;
 }
@@ -33,7 +34,7 @@ async fn test_get_subjects_with_subjects() {
             "/subjects",
             None,
             http::StatusCode::OK,
-            "[\"subject1\",\"subject2\"]",
+            r#"\["subject1","subject2"\]"#,
         )
         .await;
 }
@@ -48,7 +49,7 @@ async fn test_get_versions_under_subject_without_subject() {
             "/subjects/test.subject/versions",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }
@@ -66,7 +67,7 @@ async fn test_get_versions_under_subject_without_versions() {
             "/subjects/test.subject/versions",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 
@@ -84,7 +85,7 @@ async fn test_get_versions_under_subject_with_versions() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
 
@@ -96,7 +97,7 @@ async fn test_get_versions_under_subject_with_versions() {
             "/subjects/test.subject/versions",
             None,
             http::StatusCode::OK,
-            "[1]",
+            r#"\[1\]"#,
         )
         .await;
 
@@ -111,7 +112,7 @@ async fn test_get_versions_under_subject_with_versions() {
             "/subjects/test.subject/versions",
             Some(json!(schema2)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
 
@@ -121,7 +122,7 @@ async fn test_get_versions_under_subject_with_versions() {
             "/subjects/test.subject/versions",
             None,
             http::StatusCode::OK,
-            "[1,2]",
+            r#"\[1,2\]"#,
         )
         .await;
 }
@@ -136,7 +137,7 @@ async fn test_delete_subject_without_subject() {
             "/subjects/test.subject",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }
@@ -152,7 +153,7 @@ async fn test_delete_subject_with_subject() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
 
@@ -163,7 +164,7 @@ async fn test_delete_subject_with_subject() {
             "/subjects/test.subject",
             None,
             http::StatusCode::OK,
-            "[1]",
+            r#"\[1\]"#,
         )
         .await;
 }
@@ -178,7 +179,7 @@ async fn test_get_version_of_schema_registered_under_subject_without_subject() {
             "/subjects/test.subject/versions/1",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }
@@ -194,7 +195,7 @@ async fn test_get_version_of_schema_registered_under_subject_with_subject() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
 
@@ -205,7 +206,7 @@ async fn test_get_version_of_schema_registered_under_subject_with_subject() {
             "/subjects/test.subject/versions/2",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40402,\"message\":\"Version not found\"}",
+            r#"\{"error_code":40402,"message":"Version not found"\}"#,
         )
         .await;
     // with version out of bounds it returns 422 with 'Invalid version' for lower bound
@@ -215,7 +216,7 @@ async fn test_get_version_of_schema_registered_under_subject_with_subject() {
             "/subjects/test.subject/versions/0",
             None,
             http::StatusCode::UNPROCESSABLE_ENTITY,
-            "{\"error_code\":42202,\"message\":\"Invalid version\"}",
+            r#"\{"error_code":42202,"message":"Invalid version"\}"#,
         )
         .await;
 
@@ -226,31 +227,20 @@ async fn test_get_version_of_schema_registered_under_subject_with_subject() {
             "/subjects/test.subject/versions/2147483648",
             None,
             http::StatusCode::UNPROCESSABLE_ENTITY,
-            "{\"error_code\":42202,\"message\":\"Invalid version\"}",
+            r#"\{"error_code":42202,"message":"Invalid version"\}"#,
         )
         .await;
 
-    // with latest version it returns version with schema
-    // TODO(nlopes): fix expect body - requires knowing that the id
-    // below is 86 - maybe direct sql query
-    //
-    //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
-
+    let subject_regex = r#"\{"subject":"test.subject","id":\d+,"version":1,"schema":"\{\\n    \\"type\\": \\"record\\",\\n    \\"name\\": \\"test\\",\\n    \\"fields\\":\\n    \[\\n        \{\\n            \\"type\\": \\"string\\",\\n            \\"name\\": \\"field1\\",\\n            \\"default\\": \\"\\"\\n        \},\\n        \{\\n            \\"type\\": \\"string\\",\\n            \\"name\\": \\"field2\\"\\n        \}\\n    \]\\n\}\\n"\}"#;
     server
         .test(
             http::Method::GET,
             "/subjects/test.subject/versions/latest",
             None,
             http::StatusCode::OK,
-            "",
+            subject_regex,
         )
         .await;
-
-    // with existing version it returns version with schema
-    // TODO(nlopes): fix expect body - requires knowing that the id
-    // below is 86 - maybe direct sql query
-    //
-    //"{\"subject\":\"test.subject\",\"id\":86,\"version\":1,\"schema\":\"{\\n    \\\"type\\\": \\\"record\\\",\\n    \\\"name\\\": \\\"test\\\",\\n    \\\"fields\\\":\\n    [\\n        {\\n            \\\"type\\\": \\\"string\\\",\\n             \\\"name\\\": \\\"field1\\\"\\n           },\\n           {\\n             \\\"type\\\": \\\"int\\\",\\n             \\\"name\\\": \\\"field2\\\"\\n           }\\n         ]\\n}\\n\"}";
 
     server
         .test(
@@ -258,7 +248,7 @@ async fn test_get_version_of_schema_registered_under_subject_with_subject() {
             "/subjects/test.subject/versions/1",
             None,
             http::StatusCode::OK,
-            "",
+            subject_regex,
         )
         .await;
 }
@@ -271,14 +261,13 @@ async fn test_register_schema_under_subject_with_valid_schema() {
     let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
     let schema = SchemaBody { schema: schema_s };
 
-    // TODO(nlopes): Check for body "{\"id\":\"147\"}"
     server
         .test(
             http::Method::POST,
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
 }
@@ -297,7 +286,7 @@ async fn test_register_schema_under_subject_with_invalid_schema() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::UNPROCESSABLE_ENTITY,
-            "{\"error_code\":42201,\"message\":\"Invalid Avro schema\"}",
+            r#"\{"error_code":42201,"message":"Invalid Avro schema"\}"#,
         )
         .await;
 }
@@ -315,7 +304,7 @@ async fn test_check_schema_registration_without_subject() {
             "/subjects/test.subject",
             Some(json!(schema)),
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }
@@ -336,7 +325,7 @@ async fn test_check_schema_registration_with_subject_but_different_schema() {
             "/subjects/test.subject/versions",
             Some(json!(schema2)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
 
@@ -347,7 +336,7 @@ async fn test_check_schema_registration_with_subject_but_different_schema() {
             "/subjects/test.subject",
             Some(json!(schema)),
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40403,\"message\":\"Schema not found\"}",
+            r#"\{"error_code":40403,"message":"Schema not found"\}"#,
         )
         .await;
 }
@@ -362,7 +351,7 @@ async fn test_delete_schema_version_under_subject_without_subject() {
             "/subjects/test.subject/versions/1",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }
@@ -378,7 +367,7 @@ async fn test_delete_schema_version_under_subject_with_subject() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
 
@@ -389,7 +378,7 @@ async fn test_delete_schema_version_under_subject_with_subject() {
             "/subjects/test.subject/versions/2",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40402,\"message\":\"Version not found\"}",
+            r#"\{"error_code":40402,"message":"Version not found"\}"#,
         )
         .await;
 
@@ -400,7 +389,7 @@ async fn test_delete_schema_version_under_subject_with_subject() {
             "/subjects/test.subject/versions/0",
             None,
             http::StatusCode::UNPROCESSABLE_ENTITY,
-            "{\"error_code\":42202,\"message\":\"Invalid version\"}",
+            r#"\{"error_code":42202,"message":"Invalid version"\}"#,
         )
         .await;
     // with existing version it returns list with versions of schemas deleted
@@ -421,7 +410,7 @@ async fn test_delete_schema_version_under_subject_with_subject() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
     // with latest version and only one version it returns version of schema deleted
@@ -441,7 +430,7 @@ async fn test_delete_schema_version_under_subject_with_subject() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
     let schema_s = std::fs::read_to_string("tests/fixtures/schema2.json").unwrap();
@@ -452,7 +441,7 @@ async fn test_delete_schema_version_under_subject_with_subject() {
             "/subjects/test.subject/versions",
             Some(json!(schema)),
             http::StatusCode::OK,
-            "",
+            r#"\{"id":"\d+"\}"#,
         )
         .await;
     // with latest version and with multiple versions it returns version of schema deleted

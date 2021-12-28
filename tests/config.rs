@@ -1,4 +1,4 @@
-use actix_web::{http, rt as actix_rt};
+use actix_web::http;
 
 use crate::common::server::setup;
 use crate::db::DbAuxOperations;
@@ -14,7 +14,7 @@ async fn test_get_global_config() {
             "/config",
             None,
             http::StatusCode::OK,
-            "{\"compatibility\":\"BACKWARD\"}",
+            r#"\{"compatibility":"BACKWARD"\}"#,
         )
         .await;
 }
@@ -30,7 +30,7 @@ async fn test_set_global_config_with_valid_compatibility_full() {
             "/config",
             Some(json!({"compatibility": "FULL"})),
             http::StatusCode::OK,
-            "{\"compatibility\":\"FULL\"}",
+            r#"\{"compatibility":"FULL"\}"#,
         )
         .await;
 }
@@ -45,7 +45,7 @@ async fn test_set_global_config_with_invalid_compatibility() {
             "/config",
             Some(json!({"compatibility": "NOT_VALID"})),
             http::StatusCode::UNPROCESSABLE_ENTITY,
-            "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}",
+            r#"\{"error_code":42203,"message":"Invalid compatibility level"\}"#,
         )
         .await;
 }
@@ -62,7 +62,7 @@ async fn test_get_compatibility_level_with_existent_subject() {
             "/config/test.subject",
             None,
             http::StatusCode::OK,
-            "{\"compatibility\":\"FULL\"}",
+            r#"\{"compatibility":"FULL"\}"#,
         )
         .await;
 }
@@ -80,7 +80,7 @@ async fn test_get_compatibility_level_with_non_existent_subject() {
             "/config/test.subject",
             None,
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }
@@ -97,7 +97,7 @@ async fn test_update_compatibility_level_with_existent_subject() {
             "/config/test.subject",
             Some(json!({"compatibility": "FORWARD_TRANSITIVE"})),
             http::StatusCode::OK,
-            "{\"compatibility\":\"FORWARD_TRANSITIVE\"}",
+            r#"\{"compatibility":"FORWARD_TRANSITIVE"\}"#,
         )
         .await;
 
@@ -108,7 +108,7 @@ async fn test_update_compatibility_level_with_existent_subject() {
             "/config/test.subject",
             Some(json!({"compatibility": "NOT_VALID"})),
             http::StatusCode::UNPROCESSABLE_ENTITY,
-            "{\"error_code\":42203,\"message\":\"Invalid compatibility level\"}",
+            r#"\{"error_code":42203,"message":"Invalid compatibility level"}"#,
         )
         .await;
 }
@@ -125,7 +125,7 @@ async fn test_update_compatibility_level_with_non_existent_subject() {
             "/config/test.subject",
             Some(json!({"compatibility": "FULL"})),
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }

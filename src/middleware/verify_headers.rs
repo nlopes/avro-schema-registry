@@ -1,7 +1,6 @@
-use actix_http::error::*;
-use actix_service::{Service, Transform};
 use actix_web::{
-    dev::{ServiceRequest, ServiceResponse},
+    dev::{Service, ServiceRequest, ServiceResponse, Transform},
+    error::ParseError,
     http,
 };
 use futures::future::{ok, Either, Ready};
@@ -16,7 +15,7 @@ const VALID_ACCEPT_HEADERS: [&str; 3] = [
 ];
 
 impl VerifyAcceptHeader {
-    fn is_valid(headers: &http::HeaderMap) -> bool {
+    fn is_valid(headers: &http::header::HeaderMap) -> bool {
         match headers.get(http::header::ACCEPT) {
             Some(v) => match v.to_str() {
                 Ok(s) => VALID_ACCEPT_HEADERS.iter().any(|h| *h == s),
@@ -27,12 +26,11 @@ impl VerifyAcceptHeader {
     }
 }
 
-impl<S> Transform<S> for VerifyAcceptHeader
+impl<S> Transform<S, ServiceRequest> for VerifyAcceptHeader
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
+    S: Service<ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
-    type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = S::Error;
     type InitError = ();
@@ -48,21 +46,20 @@ pub struct VerifyAcceptHeaderMiddleware<S> {
     service: S,
 }
 
-impl<S> Service for VerifyAcceptHeaderMiddleware<S>
+impl<S> Service<ServiceRequest> for VerifyAcceptHeaderMiddleware<S>
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse>,
+    S: Service<ServiceRequest, Response = ServiceResponse>,
     S::Future: 'static,
 {
-    type Request = ServiceRequest;
     type Response = ServiceResponse;
     type Error = S::Error;
     type Future = Either<Ready<Result<Self::Response, Self::Error>>, S::Future>;
 
-    fn poll_ready(&mut self, ct: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&self, ct: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.service.poll_ready(ct)
     }
 
-    fn call(&mut self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, req: ServiceRequest) -> Self::Future {
         if VerifyAcceptHeader::is_valid(req.headers()) {
             return Either::Right(self.service.call(req));
         }
@@ -73,7 +70,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::VerifyAcceptHeader;
-    use actix_http::http::{header, HeaderMap, HeaderValue};
+    use actix_web::http::header::{self, HeaderMap, HeaderValue};
 
     #[test]
     fn middleware_accept_header_is_invalid() {

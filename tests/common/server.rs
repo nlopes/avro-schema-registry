@@ -1,10 +1,11 @@
-use actix_http::error::PayloadError;
+use actix_test as test;
 use actix_web::{
-    client::{ClientRequest, ClientResponse},
-    http, test,
-    web::Bytes,
+    error::PayloadError,
+    http,
+    web::{Bytes, Data},
     App,
 };
+use awc::{ClientRequest, ClientResponse};
 use futures::{executor::block_on, stream::Stream};
 use serde_json::Value as JsonValue;
 
@@ -28,7 +29,7 @@ impl ApiTesterServer {
         Self(test::start(|| {
             App::new()
                 .configure(app::monitoring_routing)
-                .data(DbPool::new_pool(Some(1)))
+                .app_data(Data::new(DbPool::new_pool(Some(1))))
                 .configure(app::api_routing)
         }))
     }
@@ -66,9 +67,9 @@ trait AvroRequest {
 
 impl AvroRequest for ClientRequest {
     fn avro_headers(self) -> Self {
-        self.header(http::header::CONTENT_TYPE, "application/json")
-            .header(http::header::ACCEPT, "application/vnd.schemaregistry+json")
-            .basic_auth("", Some(&get_schema_registry_password()))
+        self.insert_header((http::header::CONTENT_TYPE, "application/json"))
+            .insert_header((http::header::ACCEPT, "application/vnd.schemaregistry+json"))
+            .basic_auth("", &get_schema_registry_password())
     }
 }
 
@@ -80,12 +81,17 @@ impl<S> ValidateResponse for ClientResponse<S>
 where
     S: Stream<Item = Result<Bytes, PayloadError>> + Unpin,
 {
-    fn validate(mut self, expected_status: http::StatusCode, expected_body: &str) {
+    fn validate(mut self, expected_status: http::StatusCode, expected_body_regex: &str) {
         assert_eq!(self.status(), expected_status);
         let b = block_on(self.body()).unwrap();
-        // TODO(nlopes): we should pass a Option instead of matching against empty string
-        if expected_body != "" {
-            assert_eq!(b, expected_body);
+        let s = b.iter().map(|&c| c as char).collect::<String>();
+
+        match regex::Regex::new(expected_body_regex) {
+            Ok(re) => {
+                dbg!(&s);
+                assert!(re.is_match(&s), "dope")
+            }
+            Err(e) => panic!("{:?}", e),
         }
     }
 }
