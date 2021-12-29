@@ -44,8 +44,10 @@ impl Schema {
     }
 
     fn generate_fingerprint(data: String) -> Result<String, ApiError> {
-        use sha2::Sha256;
-        Ok(format!("{}", Self::parse(data)?.fingerprint::<Sha256>()))
+        Ok(format!(
+            "{}",
+            Self::parse(data)?.fingerprint::<sha2::Sha256>()
+        ))
     }
 
     pub(crate) fn is_compatible(

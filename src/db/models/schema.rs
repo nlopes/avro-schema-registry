@@ -37,9 +37,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
-    configs,
-    schema_versions,
-    schemas,
-    subjects,
-);
+allow_tables_to_appear_in_same_query!(configs, schema_versions, schemas, subjects,);

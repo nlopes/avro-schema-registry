@@ -1,4 +1,4 @@
-use actix_web::{http, rt as actix_rt};
+use actix_web::http;
 
 use crate::common::server::setup;
 use crate::db::DbAuxOperations;
@@ -16,7 +16,7 @@ async fn test_schema_for_compatibility_with_non_existent_subject() {
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema)),
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40401,\"message\":\"Subject not found\"}",
+            r#"\{"error_code":40401,"message":"Subject not found"\}"#,
         )
         .await;
 }
@@ -36,7 +36,7 @@ async fn test_schema_for_compatibility_with_subject_and_with_non_existent_versio
             "/compatibility/subjects/test.subject/versions/2",
             Some(json!(schema)),
             http::StatusCode::NOT_FOUND,
-            "{\"error_code\":40402,\"message\":\"Version not found\"}",
+            r#"\{"error_code":40402,"message":"Version not found"\}"#,
         )
         .await;
 }
@@ -61,7 +61,7 @@ async fn test_schema_for_forward_compatibility_with_subject_and_with_version() {
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema_forward_compatible)),
             http::StatusCode::OK,
-            "{\"is_compatible\":true}",
+            r#"\{"is_compatible":true\}"#,
         )
         .await;
 
@@ -79,7 +79,7 @@ async fn test_schema_for_forward_compatibility_with_subject_and_with_version() {
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema_backward_compatible)),
             http::StatusCode::OK,
-            "{\"is_compatible\":false}",
+            r#"\{"is_compatible":false\}"#,
         )
         .await;
 }
@@ -104,7 +104,7 @@ async fn test_schema_for_backward_compatibility_with_subject_and_with_version() 
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema2)),
             http::StatusCode::OK,
-            "{\"is_compatible\":true}",
+            r#"\{"is_compatible":true\}"#,
         )
         .await;
 
@@ -121,7 +121,7 @@ async fn test_schema_for_backward_compatibility_with_subject_and_with_version() 
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema_forward_compatible)),
             http::StatusCode::OK,
-            "{\"is_compatible\":false}",
+            r#"\{"is_compatible":false\}"#,
         )
         .await;
 }
@@ -146,7 +146,7 @@ async fn test_schema_for_full_compatibility_with_subject_and_with_version() {
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema2)),
             http::StatusCode::OK,
-            "{\"is_compatible\":false}",
+            r#"\{"is_compatible":false\}"#,
         )
         .await;
 
@@ -163,7 +163,7 @@ async fn test_schema_for_full_compatibility_with_subject_and_with_version() {
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema_forward_compatible)),
             http::StatusCode::OK,
-            "{\"is_compatible\":false}",
+            r#"\{"is_compatible":false\}"#,
         )
         .await;
 
@@ -180,7 +180,7 @@ async fn test_schema_for_full_compatibility_with_subject_and_with_version() {
             "/compatibility/subjects/test.subject/versions/1",
             Some(json!(schema_full_compatible)),
             http::StatusCode::OK,
-            "{\"is_compatible\":true}",
+            r#"\{"is_compatible":true\}"#,
         )
         .await;
 }

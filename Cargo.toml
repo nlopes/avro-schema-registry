@@ -24,11 +24,9 @@ doc = false
 
 [dependencies]
 actix = "0.12"
-actix-http = "2.2"
-actix-service = "1.0"
 actix-threadpool = "0.3"
-actix-web = "3.3"
-actix-web-prom = "0.5"
+actix-web = "4.0.0-beta.16"
+actix-web-prom = { git = "https://github.com/nlopes/actix-web-prom", branch = "nlopes/bump-to-actix-web-14" }
 avro-rs = "0.13"
 base64 = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
@@ -39,9 +37,15 @@ failure_derive = "0.1"
 futures = "0.3"
 json = "0.12"
 log = "0.4"
-phf = "0.10"
-sha2 = "0.10"
+# sha2 has to stay at version 0.9 until avro-rs upgrades their version of digest to 0.10
+sha2 = "=0.9"
 sentry = { version = "0.23", features = ["panic"] }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
+
+[dev-dependencies]
+actix-rt = "2.5"
+actix-test = "0.1.0-beta.10"
+awc = "3.0.0-beta.15"
+regex = "1.5"
