@@ -1,0 +1,5 @@
+# need to use unstable as `ignore` is still only on unstable
+unstable_features = true
+ignore = [
+  "src/db/models/schema.rs",
+]

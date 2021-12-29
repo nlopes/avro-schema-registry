@@ -42,6 +42,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
@@ -50,22 +51,32 @@ jobs:
           override: true
           components: rustfmt, clippy
 
+    - name: Cache cargo registry
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: rust_${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
     - name: Install diesel
       uses: actions-rs/cargo@v1
       with:
         command: install
         args: diesel_cli --no-default-features --features postgres
 
-    - name: Run migrations
-      run: |
-        diesel setup
-        diesel migration run
-
-    - name: Run cargo check
+    # this needs to come before running diesel migrations due to change in formatting
+    # in the generated file src/db/models/schema.rs
+    - name: Run cargo fmt
       uses: actions-rs/cargo@v1
       with:
         command: fmt
         args: --all -- --check
+
+    - name: Run migrations
+      run: |
+        diesel setup
+        diesel migration run
 
     - name: Run tests
       uses: actions-rs/cargo@v1
