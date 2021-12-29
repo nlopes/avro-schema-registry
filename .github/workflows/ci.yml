@@ -55,7 +55,6 @@ jobs:
       with:
         path: |
           ~/.cargo/registry
-          ~/.cargo/git
         key: rust_${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
     - name: Install diesel
