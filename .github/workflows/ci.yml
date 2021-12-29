@@ -41,9 +41,8 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        ref: 'master'
+    - uses: actions/checkout@v2.0.0
+
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
