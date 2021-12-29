@@ -50,13 +50,6 @@ jobs:
           override: true
           components: rustfmt, clippy
 
-    - name: Cache cargo registry
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-        key: rust_${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.toml') }}
-
     - name: Install diesel
       uses: actions-rs/cargo@v1
       with:
@@ -67,21 +60,25 @@ jobs:
       run: |
         diesel setup
         diesel migration run
+
     - name: Run cargo check
       uses: actions-rs/cargo@v1
       with:
         command: fmt
         args: --all -- --check
+
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
         command: test
         args: --all-features --all-targets --verbose
+
     - name: Run doc tests
       uses: actions-rs/cargo@v1
       with:
         command: test
         args: --doc --verbose
+
     - name: Run clippy
       uses: actions-rs/cargo@v1
       with:
