@@ -23,7 +23,7 @@ test = false
 doc = false
 
 [dependencies]
-actix = "0.12"
+actix = "0.13"
 actix-threadpool = "0.3"
 actix-web = "4.0.0-beta.16"
 actix-web-prom = { git = "https://github.com/nlopes/actix-web-prom", branch = "nlopes/bump-to-actix-web-14" }
