@@ -1,6 +1,6 @@
-use actix_web::HttpResponse;
+use actix_web::{HttpResponse, Responder};
 
-pub fn status() -> HttpResponse {
+pub async fn status() -> impl Responder {
     HttpResponse::Ok()
         .content_type("application/json")
         .body("{\"status\": \"healthy\"}")
