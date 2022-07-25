@@ -82,9 +82,9 @@ dependencies = [
 
 [[package]]
 name = "actix-http-test"
-version = "3.0.0-beta.13"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09594b8a7eaa15da5cfd0e25c779d4b1d6ded62d4a79904f1d91b0dcf97c78e7"
+checksum = "f40511826540d084fbcd68ee65b75b1849961c1760a193b09180a4851f20075b"
 dependencies = [
  "actix-codec",
  "actix-rt",
@@ -172,9 +172,9 @@ dependencies = [
 
 [[package]]
 name = "actix-test"
-version = "0.1.0-beta.13"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7919a113ef74b5d52218ea0bd310d0d1b0d2be822994716754e265f20734d601"
+checksum = "546b075f2ee13e081a040b60b95a08f0eceaac6bc759309026611234dc80abfe"
 dependencies = [
  "actix-codec",
  "actix-http",
