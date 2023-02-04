@@ -437,9 +437,9 @@ dependencies = [
 
 [[package]]
 name = "awc"
-version = "3.0.0"
+version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65c60c44fbf3c8cee365e86b97d706e513b733c4eeb16437b45b88d2fffe889a"
+checksum = "0dff3fc64a176e0d4398c71b0f2c2679ff4a723c6ed8fcc68dfe5baa00665388"
 dependencies = [
  "actix-codec",
  "actix-http",
@@ -448,7 +448,7 @@ dependencies = [
  "actix-tls",
  "actix-utils",
  "ahash",
- "base64 0.13.1",
+ "base64 0.21.0",
  "bytes",
  "cfg-if",
  "cookie",
