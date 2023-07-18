@@ -1,6 +1,7 @@
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::{Error, ErrorBadRequest, ErrorForbidden, ParseError};
 use actix_web::http::header::HeaderMap;
+use base64::{engine::general_purpose::STANDARD as StandardEngine, Engine as _};
 use futures::future::{ok, Either, Ready};
 use futures::task::{Context, Poll};
 
@@ -32,7 +33,7 @@ impl VerifyAuthorization {
             return Err(ErrorBadRequest(ParseError::Header));
         }
 
-        match base64::decode(base64_auth) {
+        match StandardEngine.decode(base64_auth) {
             Ok(bytes) => {
                 let mut basic_creds = std::str::from_utf8(&bytes)?
                     .trim_end_matches('\n')

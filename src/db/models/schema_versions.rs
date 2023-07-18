@@ -254,7 +254,7 @@ impl SchemaVersion {
                     .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
                     .and_then(|o| match o {
                         0 => Err(ApiError::new(ApiAvroErrorCode::VersionNotFound)),
-                        _ => Ok(v as u32),
+                        _ => Ok(v),
                     })
             })
         })

@@ -69,7 +69,7 @@ impl AvroRequest for ClientRequest {
     fn avro_headers(self) -> Self {
         self.insert_header((http::header::CONTENT_TYPE, "application/json"))
             .insert_header((http::header::ACCEPT, "application/vnd.schemaregistry+json"))
-            .basic_auth("", &get_schema_registry_password())
+            .basic_auth("", get_schema_registry_password())
     }
 }
 

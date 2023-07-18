@@ -16,7 +16,7 @@ async fn test_get_subjects_without_subjects() {
             "/subjects",
             None,
             http::StatusCode::OK,
-            r#"\[\]"#,
+            r"\[\]",
         )
         .await;
 }
@@ -97,7 +97,7 @@ async fn test_get_versions_under_subject_with_versions() {
             "/subjects/test.subject/versions",
             None,
             http::StatusCode::OK,
-            r#"\[1\]"#,
+            r"\[1\]",
         )
         .await;
 
@@ -122,7 +122,7 @@ async fn test_get_versions_under_subject_with_versions() {
             "/subjects/test.subject/versions",
             None,
             http::StatusCode::OK,
-            r#"\[1,2\]"#,
+            r"\[1,2\]",
         )
         .await;
 }
@@ -164,7 +164,7 @@ async fn test_delete_subject_with_subject() {
             "/subjects/test.subject",
             None,
             http::StatusCode::OK,
-            r#"\[1\]"#,
+            r"\[1\]",
         )
         .await;
 }
