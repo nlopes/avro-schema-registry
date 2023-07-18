@@ -1,5 +1,7 @@
-/target
+/target/
+/.cargo/
 **/*.rs.bk
 rls*.log
 development-db
 .projectile
+.DS_Store
