@@ -33,6 +33,8 @@ impl VerifyAuthorization {
             return Err(ErrorBadRequest(ParseError::Header));
         }
 
+        // Decode the base64 auth which will contain the username and password in the
+        // format of username:password (we ignore the username)
         match StandardEngine.decode(base64_auth) {
             Ok(bytes) => {
                 let mut basic_creds = std::str::from_utf8(&bytes)?

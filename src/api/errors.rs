@@ -58,8 +58,8 @@ pub struct ApiErrorResponse {
     pub message: String,
 }
 
-#[derive(Debug, Fail, Clone)]
-#[fail(display = "{}", response)]
+#[derive(Debug, thiserror::Error, Clone)]
+#[error("{}", response)]
 pub struct ApiError {
     pub status_code: StatusCode,
     pub response: ApiErrorResponse,

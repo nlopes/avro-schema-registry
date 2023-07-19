@@ -82,6 +82,12 @@ export SENTRY_URL="http://sentry-url/id" \ # optional
 cargo run # or the binary after running `cargo build`
 ```
 
+3) Make a request
+```
+# If you assume the credentials above:
+curl -v -H 'Authorization: Basic OnNpbGx5X3Bhc3N3b3Jk' -H 'Accept: application/json' http://127.0.0.1:8080/config
+```
+
 ## Tests
 
 ### Unit
