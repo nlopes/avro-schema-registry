@@ -52,7 +52,7 @@ async fn test_set_global_config_with_invalid_compatibility() {
 
 #[actix_rt::test]
 async fn test_get_compatibility_level_with_existent_subject() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.create_test_subject_with_config("FULL");
 
     // returns valid compatibility
@@ -69,7 +69,7 @@ async fn test_get_compatibility_level_with_existent_subject() {
 
 #[actix_rt::test]
 async fn test_get_compatibility_level_with_non_existent_subject() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.create_test_subject_with_config("FULL");
     conn.reset_subjects();
 
@@ -87,7 +87,7 @@ async fn test_get_compatibility_level_with_non_existent_subject() {
 
 #[actix_rt::test]
 async fn test_update_compatibility_level_with_existent_subject() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.create_test_subject_with_config("FULL");
 
     // with valid compatibility FORWARD_TRANSITIVE it returns FORWARD_TRANSITIVE
@@ -115,7 +115,7 @@ async fn test_update_compatibility_level_with_existent_subject() {
 
 #[actix_rt::test]
 async fn test_update_compatibility_level_with_non_existent_subject() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.reset_subjects();
 
     // with valid compatibility FULL it returns 404

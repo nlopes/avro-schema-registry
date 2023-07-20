@@ -19,10 +19,13 @@ pub async fn check_compatibility(
     let schema = body.into_inner().schema;
     info!("method=post,subject={},version={}", subject, version);
 
-    let conn = db.connection()?;
-    let sv_response =
-        crate::api::subjects::get_subject_version_from_db(&conn, subject.clone(), Some(version))?;
-    let compatibility = Config::get_with_subject_name(&conn, subject)?;
+    let mut conn = db.connection()?;
+    let sv_response = crate::api::subjects::get_subject_version_from_db(
+        &mut conn,
+        subject.clone(),
+        Some(version),
+    )?;
+    let compatibility = Config::get_with_subject_name(&mut conn, subject)?;
     if let Ok(compat) = CompatibilityLevel::from_str(&compatibility) {
         if let Ok(is_compatible) =
             SchemaCompatibility::is_compatible(&sv_response.schema, &schema, compat)

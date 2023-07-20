@@ -10,8 +10,8 @@ use super::schema::*;
 use super::Subject;
 
 #[derive(Debug, Identifiable, Queryable, Associations, Serialize)]
-#[table_name = "configs"]
-#[belongs_to(Subject)]
+#[diesel(table_name = configs)]
+#[diesel(belongs_to(Subject))]
 pub struct Config {
     pub id: i64,
     pub compatibility: Option<String>,
@@ -113,7 +113,7 @@ impl Config {
     ///
     /// *NOTE*: if there is no global compatibility level, it sets it to the default
     /// compatibility level
-    pub fn get_global_compatibility(conn: &PgConnection) -> Result<String, ApiError> {
+    pub fn get_global_compatibility(conn: &mut PgConnection) -> Result<String, ApiError> {
         use super::schema::configs::dsl::*;
         match configs.filter(id.eq(0)).get_result::<Self>(conn) {
             // This should always return ok. If it doesn't, that means someone manually
@@ -136,7 +136,7 @@ impl Config {
     }
 
     pub fn get_with_subject_name(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
     ) -> Result<String, ApiError> {
         let subject = Subject::get_by_name(conn, subject_name)?;
@@ -153,7 +153,7 @@ impl Config {
     }
 
     pub fn set_with_subject_name(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
         compat: String,
     ) -> Result<String, ApiError> {
@@ -191,7 +191,10 @@ impl Config {
     /// Updates the global compatibility level
     ///
     /// *NOTE*: if there is no global compatibility level, it sets it to the level passed
-    pub fn set_global_compatibility(conn: &PgConnection, compat: &str) -> Result<String, ApiError> {
+    pub fn set_global_compatibility(
+        conn: &mut PgConnection,
+        compat: &str,
+    ) -> Result<String, ApiError> {
         use super::schema::configs::dsl::*;
 
         match diesel::update(configs.find(0))
@@ -213,7 +216,7 @@ impl Config {
         }
     }
 
-    fn insert(compat: &str, conn: &PgConnection) -> Result<usize, ApiError> {
+    fn insert(compat: &str, conn: &mut PgConnection) -> Result<usize, ApiError> {
         use super::schema::configs::dsl::*;
 
         diesel::insert_into(configs)

@@ -5,8 +5,8 @@ use super::schema::*;
 
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
-#[derive(Debug, Identifiable, Associations, Queryable, Serialize)]
-#[table_name = "subjects"]
+#[derive(Debug, Identifiable, Queryable, Serialize)]
+#[diesel(table_name = subjects)]
 pub struct Subject {
     pub id: i64,
     pub name: String,
@@ -19,7 +19,7 @@ impl Subject {
     ///
     /// *Note:* 'ignore' in the case above means we will update the name if it already
     /// exists. This spares us complicated code to fetch, verify and then insert.
-    pub fn insert(conn: &PgConnection, subject: String) -> Result<Self, ApiError> {
+    pub fn insert(conn: &mut PgConnection, subject: String) -> Result<Self, ApiError> {
         use super::schema::subjects::dsl::*;
 
         diesel::insert_into(subjects)
@@ -35,7 +35,7 @@ impl Subject {
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
-    pub fn distinct_names(conn: &PgConnection) -> Result<Vec<String>, ApiError> {
+    pub fn distinct_names(conn: &mut PgConnection) -> Result<Vec<String>, ApiError> {
         use super::schema::subjects::dsl::{name, subjects};
 
         subjects
@@ -44,7 +44,7 @@ impl Subject {
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
-    pub fn get_by_name(conn: &PgConnection, subject: String) -> Result<Self, ApiError> {
+    pub fn get_by_name(conn: &mut PgConnection, subject: String) -> Result<Self, ApiError> {
         use super::schema::subjects::dsl::{name, subjects};
         match subjects.filter(name.eq(subject)).first::<Self>(conn) {
             Ok(s) => Ok(s),
@@ -56,7 +56,7 @@ impl Subject {
     }
 
     pub fn delete_by_name(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
     ) -> Result<Vec<Option<i32>>, ApiError> {
         use super::SchemaVersion;

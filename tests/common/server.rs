@@ -18,7 +18,7 @@ pub struct ApiTesterServer(test::TestServer);
 
 pub fn setup() -> (ApiTesterServer, DbConnection) {
     let server = ApiTesterServer::new();
-    let conn = DbPool::new_pool(Some(1)).connection().unwrap();
+    let mut conn = DbPool::new_pool(Some(1)).connection().unwrap();
     conn.reset();
 
     (server, conn)

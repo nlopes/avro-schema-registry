@@ -7,7 +7,7 @@ use avro_schema_registry::api::SchemaBody;
 
 #[actix_rt::test]
 async fn test_get_subjects_without_subjects() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.reset_subjects();
     // returns empty list
     server
@@ -23,7 +23,7 @@ async fn test_get_subjects_without_subjects() {
 
 #[actix_rt::test]
 async fn test_get_subjects_with_subjects() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.reset_subjects();
     conn.add_subjects(vec![String::from("subject1"), String::from("subject2")]);
 
@@ -56,7 +56,7 @@ async fn test_get_versions_under_subject_without_subject() {
 
 #[actix_rt::test]
 async fn test_get_versions_under_subject_without_versions() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.add_subjects(vec![String::from("test.subject")]);
 
     // This should never happen with correct usage of the API

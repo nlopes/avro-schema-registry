@@ -7,9 +7,9 @@ use super::subjects::Subject;
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
 #[derive(Debug, Identifiable, Associations, Queryable)]
-#[table_name = "schema_versions"]
-#[belongs_to(Schema)]
-#[belongs_to(Subject)]
+#[diesel(table_name = schema_versions)]
+#[diesel(belongs_to(Schema))]
+#[diesel(belongs_to(Subject))]
 pub struct SchemaVersion {
     pub id: i64,
     pub version: Option<i32>,
@@ -18,7 +18,7 @@ pub struct SchemaVersion {
 }
 
 #[derive(Debug, Insertable)]
-#[table_name = "schema_versions"]
+#[diesel(table_name = schema_versions)]
 pub struct NewSchemaVersion {
     pub version: Option<i32>,
     pub subject_id: i64,
@@ -28,7 +28,7 @@ pub struct NewSchemaVersion {
 pub type SchemaVersionFields = NewSchemaVersion;
 
 impl SchemaVersion {
-    pub fn insert(conn: &PgConnection, sv: NewSchemaVersion) -> Result<Self, ApiError> {
+    pub fn insert(conn: &mut PgConnection, sv: NewSchemaVersion) -> Result<Self, ApiError> {
         use super::schema::schema_versions::dsl::schema_versions;
         diesel::insert_into(schema_versions)
             .values(&sv)
@@ -37,7 +37,7 @@ impl SchemaVersion {
     }
 
     pub fn find(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         find_subject_id: i64,
         find_schema_id: i64,
     ) -> Result<Self, ApiError> {
@@ -51,7 +51,7 @@ impl SchemaVersion {
     }
 
     pub fn with_schema_and_subject(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         search_subject_name: String,
         search_schema_id: i64,
     ) -> Result<usize, ApiError> {
@@ -70,7 +70,7 @@ impl SchemaVersion {
     }
 
     pub fn versions_with_subject_name(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
     ) -> Result<Vec<Option<i32>>, ApiError> {
         use super::schema::schema_versions::dsl::{schema_versions, subject_id, version};
@@ -95,7 +95,7 @@ impl SchemaVersion {
     }
 
     pub fn latest_version_with_subject_name(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
     ) -> Result<Option<i32>, ApiError> {
         use super::schema::schema_versions::dsl::{schema_versions, subject_id, version};
@@ -116,7 +116,7 @@ impl SchemaVersion {
     }
 
     pub fn get_schema_id_from_latest(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
     ) -> Result<(i64, i32, String), ApiError> {
         use super::schema::schema_versions::dsl::{
@@ -124,7 +124,7 @@ impl SchemaVersion {
         };
         use super::schema::schemas::dsl::{json, schemas};
 
-        conn.transaction::<_, ApiError, _>(|| {
+        conn.transaction::<_, ApiError, _>(|conn| {
             let subject = Subject::get_by_name(conn, subject_name)?;
 
             let (schema_version, schema_id_result): (Option<i32>, i64) = match schema_versions
@@ -156,7 +156,7 @@ impl SchemaVersion {
     /// TODO: This should return a struct, not a tuple as it's then hard to interface with
     /// this method
     pub fn get_schema_id(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
         schema_version: u32,
     ) -> Result<(i64, i32, String), ApiError> {
@@ -165,7 +165,7 @@ impl SchemaVersion {
         };
         use super::schema::schemas::dsl::{json, schemas};
 
-        conn.transaction::<_, ApiError, _>(|| {
+        conn.transaction::<_, ApiError, _>(|conn| {
             let subject = Subject::get_by_name(conn, subject_name)?;
 
             let schema_id_result = match schema_versions
@@ -191,7 +191,7 @@ impl SchemaVersion {
     }
 
     pub fn delete_subject_with_name(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject: String,
     ) -> Result<Vec<Option<i32>>, diesel::result::Error> {
         use super::schema::schema_versions::dsl::{
@@ -200,7 +200,7 @@ impl SchemaVersion {
         use super::schema::schemas::dsl::{id as schemas_id, schemas};
         use super::schema::subjects::dsl::{id as subjects_id, name, subjects};
 
-        conn.transaction::<_, diesel::result::Error, _>(|| {
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
             Ok(schema_versions
                 .inner_join(subjects.on(subject_id.eq(subjects_id)))
                 .inner_join(schemas.on(schema_id.eq(schemas_id)))
@@ -218,13 +218,13 @@ impl SchemaVersion {
         })
     }
 
-    fn delete(&self, conn: &PgConnection) -> Result<(), diesel::result::Error> {
+    fn delete(&self, conn: &mut PgConnection) -> Result<(), diesel::result::Error> {
         use super::schema::configs::dsl::{configs, subject_id};
         use super::schema::schema_versions::dsl::{id, schema_versions};
         use super::schema::schemas::dsl::{id as schemas_id, schemas};
         use super::schema::subjects::dsl::{id as subjects_id, subjects};
 
-        conn.transaction::<_, diesel::result::Error, _>(|| {
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
             let schemas_delete = schemas.filter(schemas_id.eq(self.schema_id));
             let subjects_delete = subjects.filter(subjects_id.eq(self.subject_id));
             let schema_versions_delete = schema_versions.filter(id.eq(self.id));
@@ -240,14 +240,14 @@ impl SchemaVersion {
     }
 
     pub fn delete_version_with_subject(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         request: DeleteSchemaVersion,
     ) -> Result<u32, ApiError> {
         use super::schema::schema_versions::dsl::version;
 
         let (subject, v) = (request.subject, request.version);
 
-        conn.transaction::<_, ApiError, _>(|| {
+        conn.transaction::<_, ApiError, _>(|conn| {
             Subject::get_by_name(conn, subject.to_owned()).and_then(|subject| {
                 diesel::delete(Self::belonging_to(&subject).filter(version.eq(v as i32)))
                     .execute(conn)

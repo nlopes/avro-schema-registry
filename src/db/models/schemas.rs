@@ -7,8 +7,8 @@ use crate::api::errors::{ApiAvroErrorCode, ApiError};
 use super::schema::*;
 use super::{GetSubjectVersionResponse, NewSchemaVersion, SchemaVersion, Subject};
 
-#[derive(Debug, Identifiable, Associations, Queryable)]
-#[table_name = "schemas"]
+#[derive(Debug, Identifiable, Queryable)]
+#[diesel(table_name = schemas)]
 pub struct Schema {
     pub id: i64,
     pub fingerprint: String,
@@ -19,7 +19,7 @@ pub struct Schema {
 }
 
 #[derive(Debug, Insertable)]
-#[table_name = "schemas"]
+#[diesel(table_name = schemas)]
 pub struct NewSchema {
     pub fingerprint: String,
     pub json: String,
@@ -63,7 +63,7 @@ impl Schema {
     }
 
     pub fn find_by_fingerprint(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         fingerprint: String,
     ) -> Result<Option<Self>, ApiError> {
         use super::schema::schemas::dsl::{fingerprint2, schemas};
@@ -75,13 +75,13 @@ impl Schema {
     }
 
     pub fn register_new_version(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         registration: RegisterSchema,
     ) -> Result<Self, ApiError> {
         let (subject, json) = (registration.subject, registration.schema);
         let fingerprint = Self::generate_fingerprint(json.to_owned())?;
 
-        conn.transaction::<_, ApiError, _>(|| {
+        conn.transaction::<_, ApiError, _>(|conn| {
             let db_schema = Self::find_by_fingerprint(conn, fingerprint.to_owned())?;
             match db_schema {
                 Some(s) => {
@@ -96,7 +96,7 @@ impl Schema {
     }
 
     fn create_new_version(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         json: Option<String>,
         fingerprint: String,
         subject_name: String,
@@ -141,7 +141,11 @@ impl Schema {
         Ok(schema)
     }
 
-    pub fn new(conn: &PgConnection, json: String, fingerprint: String) -> Result<Self, ApiError> {
+    pub fn new(
+        conn: &mut PgConnection,
+        json: String,
+        fingerprint: String,
+    ) -> Result<Self, ApiError> {
         // TODO: we use the same in both fields. This means we don't do the same as
         // salsify
         let new_schema = NewSchema {
@@ -155,7 +159,7 @@ impl Schema {
         Self::insert(conn, new_schema)
     }
 
-    pub fn insert(conn: &PgConnection, schema: NewSchema) -> Result<Self, ApiError> {
+    pub fn insert(conn: &mut PgConnection, schema: NewSchema) -> Result<Self, ApiError> {
         use super::schema::schemas::dsl::*;
         diesel::insert_into(schemas)
             .values(&schema)
@@ -163,7 +167,7 @@ impl Schema {
             .map_err(|_| ApiError::new(ApiAvroErrorCode::BackendDatastoreError))
     }
 
-    pub fn get_by_json(conn: &PgConnection, data: String) -> Result<Self, ApiError> {
+    pub fn get_by_json(conn: &mut PgConnection, data: String) -> Result<Self, ApiError> {
         use super::schema::schemas::dsl::*;
         schemas
             .filter(json.eq(data))
@@ -171,7 +175,7 @@ impl Schema {
             .map_err(|_| ApiError::new(ApiAvroErrorCode::SchemaNotFound))
     }
 
-    pub fn get_by_id(conn: &PgConnection, schema_id: i64) -> Result<Self, ApiError> {
+    pub fn get_by_id(conn: &mut PgConnection, schema_id: i64) -> Result<Self, ApiError> {
         use super::schema::schemas::dsl::*;
         schemas
             .find(schema_id)
@@ -180,11 +184,11 @@ impl Schema {
     }
 
     pub fn verify_registration(
-        conn: &PgConnection,
+        conn: &mut PgConnection,
         subject_name: String,
         schema_json: String,
     ) -> Result<VerifyRegistrationResponse, ApiError> {
-        conn.transaction::<_, ApiError, _>(|| {
+        conn.transaction::<_, ApiError, _>(|conn| {
             Subject::get_by_name(conn, subject_name.to_string()).and_then(|subject| {
                 Self::get_by_json(conn, schema_json.to_string()).and_then(|schema| {
                     SchemaVersion::find(conn, subject.id, schema.id).and_then(|schema_version| {

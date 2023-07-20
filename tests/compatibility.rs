@@ -23,7 +23,7 @@ async fn test_schema_for_compatibility_with_non_existent_subject() {
 
 #[actix_rt::test]
 async fn test_schema_for_compatibility_with_subject_and_with_non_existent_version() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.create_test_subject_with_config("FORWARD");
 
     let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
@@ -43,7 +43,7 @@ async fn test_schema_for_compatibility_with_subject_and_with_non_existent_versio
 
 #[actix_rt::test]
 async fn test_schema_for_forward_compatibility_with_subject_and_with_version() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.create_test_subject_with_config("FORWARD");
 
     let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
@@ -86,7 +86,7 @@ async fn test_schema_for_forward_compatibility_with_subject_and_with_version() {
 
 #[actix_rt::test]
 async fn test_schema_for_backward_compatibility_with_subject_and_with_version() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.create_test_subject_with_config("BACKWARD");
 
     let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
@@ -128,7 +128,7 @@ async fn test_schema_for_backward_compatibility_with_subject_and_with_version() 
 
 #[actix_rt::test]
 async fn test_schema_for_full_compatibility_with_subject_and_with_version() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
     conn.create_test_subject_with_config("FULL");
 
     let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();

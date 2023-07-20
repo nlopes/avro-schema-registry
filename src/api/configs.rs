@@ -9,8 +9,8 @@ use crate::db::{DbManage, DbPool};
 pub async fn get_config(db: Data<DbPool>) -> impl Responder {
     info!("path=/config,method=get");
 
-    let conn = db.connection()?;
-    match Config::get_global_compatibility(&conn).and_then(ConfigCompatibility::new) {
+    let mut conn = db.connection()?;
+    match Config::get_global_compatibility(&mut conn).and_then(ConfigCompatibility::new) {
         Ok(config) => Ok(HttpResponse::Ok().json(config)),
         Err(e) => Err(e),
     }
@@ -20,8 +20,8 @@ pub async fn put_config(body: Json<SetConfig>, db: Data<DbPool>) -> impl Respond
     let compatibility = body.compatibility;
     info!("method=put,compatibility={}", compatibility);
 
-    let conn = db.connection()?;
-    match Config::set_global_compatibility(&conn, &compatibility.valid()?.to_string())
+    let mut conn = db.connection()?;
+    match Config::set_global_compatibility(&mut conn, &compatibility.valid()?.to_string())
         .and_then(ConfigCompatibility::new)
     {
         Ok(config) => Ok(HttpResponse::Ok().json(config)),
@@ -34,8 +34,8 @@ pub async fn get_subject_config(subject_path: Path<String>, db: Data<DbPool>) ->
     let subject = subject_path.into_inner();
     info!("method=get,subject={}", subject);
 
-    let conn = db.connection()?;
-    match Config::get_with_subject_name(&conn, subject).and_then(ConfigCompatibility::new) {
+    let mut conn = db.connection()?;
+    match Config::get_with_subject_name(&mut conn, subject).and_then(ConfigCompatibility::new) {
         Ok(config) => Ok(HttpResponse::Ok().json(config)),
         Err(e) => Err(e),
     }
@@ -59,8 +59,8 @@ pub async fn put_subject_config(
         subject, compatibility
     );
 
-    let conn = db.connection()?;
-    match Config::set_with_subject_name(&conn, subject, compatibility.valid()?.to_string())
+    let mut conn = db.connection()?;
+    match Config::set_with_subject_name(&mut conn, subject, compatibility.valid()?.to_string())
         .and_then(ConfigCompatibility::new)
     {
         Ok(config) => Ok(HttpResponse::Ok().json(config)),

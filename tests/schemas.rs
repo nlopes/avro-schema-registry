@@ -21,7 +21,7 @@ async fn test_get_schema_without_schema() {
 
 #[actix_rt::test]
 async fn test_get_schema_with_schema() {
-    let (server, conn) = setup();
+    let (server, mut conn) = setup();
 
     let schema_s = std::fs::read_to_string("tests/fixtures/schema.json").unwrap();
     let schema = conn.register_schema(String::from("subject1"), schema_s.to_string());
