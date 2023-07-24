@@ -26,7 +26,7 @@ doc = false
 actix = "0.13"
 actix-threadpool = "0.3"
 actix-web = "4.3"
-actix-web-prom = "0.6"
+actix-web-prom = "0.7"
 avro-rs = "0.13"
 base64 = "0.21"
 chrono = { version = "0.4", features = ["serde"] }
