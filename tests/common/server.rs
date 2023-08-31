@@ -88,7 +88,6 @@ where
 
         match regex::Regex::new(expected_body_regex) {
             Ok(re) => {
-                dbg!(&s);
                 assert!(re.is_match(&s), "dope")
             }
             Err(e) => panic!("{:?}", e),

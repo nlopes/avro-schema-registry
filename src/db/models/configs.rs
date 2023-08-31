@@ -3,6 +3,7 @@ use std::str;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 

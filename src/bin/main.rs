@@ -19,7 +19,10 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let _sentry_client = sentry::init(sentry::ClientOptions {
-        dsn: env::var("SENTRY_URL").ok().into_dsn().unwrap(),
+        dsn: env::var("SENTRY_URL")
+            .ok()
+            .into_dsn()
+            .expect("Invalid Sentry DSN"),
         release: Some(std::borrow::Cow::Borrowed(env!("CARGO_PKG_VERSION"))),
         ..Default::default()
     });
@@ -28,7 +31,10 @@ async fn main() -> std::io::Result<()> {
     let prometheus = PrometheusMetricsBuilder::new("avro_schema_registry")
         .endpoint("/_/metrics")
         .build()
-        .unwrap();
+        .expect("Failed to instantiate Prometheus metrics");
+
+    let host = env::var("DEFAULT_HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
+    log::info!("Starting server at {}", host);
 
     HttpServer::new(move || {
         let db_pool = DbPool::new_pool(None);
@@ -40,7 +46,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(db_pool))
             .configure(app::api_routing)
     })
-    .bind(env::var("DEFAULT_HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string()))?
+    .bind(host)?
     .shutdown_timeout(2)
     .run()
     .await

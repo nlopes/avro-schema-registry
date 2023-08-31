@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use log::error;
 
 use super::schema::*;
 use super::schemas::Schema;
@@ -210,7 +211,7 @@ impl SchemaVersion {
                 .into_iter()
                 .map(|entry| {
                     if let Err(e) = entry.delete(conn) {
-                        info!("error deleting: {}", e);
+                        error!("error deleting: {}", e);
                     }
                     entry.version
                 })

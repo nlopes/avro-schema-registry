@@ -1,4 +1,6 @@
-table! {
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
     configs (id) {
         id -> Int8,
         compatibility -> Nullable<Varchar>,
@@ -8,7 +10,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     schema_versions (id) {
         id -> Int8,
         version -> Nullable<Int4>,
@@ -17,7 +19,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     schemas (id) {
         id -> Int8,
         fingerprint -> Varchar,
@@ -28,7 +30,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     subjects (id) {
         id -> Int8,
         name -> Text,
@@ -37,7 +39,7 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
+diesel::allow_tables_to_appear_in_same_query!(
     configs,
     schema_versions,
     schemas,

@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use serde::Serialize;
 
 use super::schema::*;
 

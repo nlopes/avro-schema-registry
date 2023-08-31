@@ -1,4 +1,5 @@
 use actix_web::{http::StatusCode, HttpResponse};
+use serde::Serialize;
 
 // TODO: maybe replace this with serde_aux::serde_aux_enum_number_declare
 macro_rules! enum_number {

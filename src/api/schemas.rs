@@ -2,6 +2,8 @@ use actix_web::{
     web::{Data, Json, Path},
     HttpResponse, Responder,
 };
+use log::info;
+use serde::{Deserialize, Serialize};
 
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 use crate::db::models::{

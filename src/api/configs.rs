@@ -2,6 +2,7 @@ use actix_web::{
     web::{Data, Json, Path},
     HttpResponse, Responder,
 };
+use log::info;
 
 use crate::db::models::{Config, ConfigCompatibility, SetConfig};
 use crate::db::{DbManage, DbPool};

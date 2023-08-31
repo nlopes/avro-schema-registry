@@ -1,6 +1,7 @@
 use avro_rs::schema_compatibility::SchemaCompatibility;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
+use serde::Serialize;
 
 use crate::api::errors::{ApiAvroErrorCode, ApiError};
 
