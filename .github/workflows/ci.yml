@@ -65,18 +65,17 @@ jobs:
         command: install
         args: diesel_cli --no-default-features --features postgres
 
-    # this needs to come before running diesel migrations due to change in formatting
-    # in the generated file src/db/models/schema.rs
-    - name: Run cargo fmt
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: --all -- --check
-
     - name: Run migrations
       run: |
         diesel setup
         diesel migration run
+
+    - name: Run cargo fmt
+      uses: actions-rs/cargo@v1
+      if: matrix.toolchain == 'nightly' # NOTE: We run in nightly because `cargo fmt` in stable doesn't support ignoring certain files, including @generated tagged ones.
+      with:
+        command: fmt
+        args: --all --check -- --config format_generated_files=false
 
     - name: Run tests
       uses: actions-rs/cargo@v1
