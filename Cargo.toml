@@ -45,5 +45,5 @@ thiserror = "1.0"
 [dev-dependencies]
 actix-rt = "2.9"
 actix-test = "0.1"
-awc = "3.2"
+awc = "3.3"
 regex = "1.10"
