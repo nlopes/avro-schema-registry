@@ -28,7 +28,7 @@ actix-threadpool = "0.3"
 actix-web = "4.4"
 actix-web-prom = "0.8"
 avro-rs = { version = "0.15", package = "apache-avro" }
-base64 = "0.21"
+base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "2.1", features = ["postgres", "chrono", "r2d2"] }
 env_logger = "0.11"
