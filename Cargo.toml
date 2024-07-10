@@ -43,7 +43,7 @@ serde_json = "1.0"
 thiserror = "1.0"
 
 [dev-dependencies]
-actix-rt = "2.9"
+actix-rt = "2.10"
 actix-test = "0.1"
 awc = "3.4"
 regex = "1.10"
