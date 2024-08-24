@@ -59,8 +59,7 @@ impl Schema {
             .map_err(|_| ApiError::new(ApiAvroErrorCode::InvalidAvroSchema))?;
         let readers_schema = avro_rs::Schema::parse_str(readers_schema)
             .map_err(|_| ApiError::new(ApiAvroErrorCode::InvalidAvroSchema))?;
-        let a = SchemaCompatibility::can_read(&writers_schema, &readers_schema);
-        Ok(a)
+        Ok(SchemaCompatibility::can_read(&writers_schema, &readers_schema).is_ok())
     }
 
     pub fn find_by_fingerprint(
