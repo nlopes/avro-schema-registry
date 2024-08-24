@@ -33,7 +33,7 @@ async fn test_get_schema_with_schema() {
             &format!("/schemas/ids/{}", schema.id),
             None,
             http::StatusCode::OK,
-            r#"\{"schema":"\{\\n    \\"type\\": \\"record\\",\\n    \\"name\\": \\"test\\",\\n    \\"fields\\":\\n    \[\\n        \{\\n            \\"type\\": \\"string\\",\\n            \\"name\\": \\"field1\\",\\n            \\"default\\": \\"\\"\\n        \},\\n        \{\\n            \\"type\\": \\"string\\",\\n            \\"name\\": \\"field2\\"\\n        \}\\n    \]\\n\}\\n"\}"#
+            r#"\{"schema":"\{    \\"type\\": \\"record\\",    \\"name\\": \\"test\\",    \\"fields\\":    \[        \{            \\"type\\": \\"string\\",            \\"name\\": \\"field1\\",            \\"default\\": \\"\\"        \},        \{            \\"type\\": \\"string\\",            \\"name\\": \\"field2\\"        \}    \]\}"\}"#
         )
         .await;
 }
