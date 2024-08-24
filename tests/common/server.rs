@@ -84,11 +84,20 @@ where
     fn validate(mut self, expected_status: http::StatusCode, expected_body_regex: &str) {
         assert_eq!(self.status(), expected_status);
         let b = block_on(self.body()).unwrap();
-        let s = b.iter().map(|&c| c as char).collect::<String>();
+        let s = b
+            .iter()
+            .map(|&c| c as char)
+            .collect::<String>()
+            .replace("\\r\\n", "")
+            .replace("\\n", "");
 
         match regex::Regex::new(expected_body_regex) {
             Ok(re) => {
-                assert!(re.is_match(&s), "dope")
+                assert!(
+                    re.is_match(&s),
+                    "{}",
+                    format!("body doesn't match regex: {s} != {expected_body_regex}")
+                )
             }
             Err(e) => panic!("{:?}", e),
         }

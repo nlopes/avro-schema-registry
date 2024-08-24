@@ -5,8 +5,13 @@ use avro_schema_registry::db::DbConnection;
 
 pub trait DbAuxOperations {
     fn reset(&mut self);
-    fn reset_schemas(&mut self);
     fn reset_subjects(&mut self);
+
+    // These two are not yet used anywhere but I wanted them as part of the trait and
+    // implemented
+    #[allow(dead_code)]
+    fn reset_schemas(&mut self);
+    #[allow(dead_code)]
     fn reset_configs_global(&mut self);
 
     fn create_test_subject_with_config(&mut self, compat: &str);
@@ -30,6 +35,7 @@ impl DbAuxOperations for DbConnection {
         .unwrap();
     }
 
+    #[allow(dead_code)]
     fn reset_schemas(&mut self) {
         use avro_schema_registry::db::models::schema::schemas::dsl::*;
         diesel::delete(schemas).execute(self).unwrap();
@@ -40,6 +46,7 @@ impl DbAuxOperations for DbConnection {
         diesel::delete(subjects).execute(self).unwrap();
     }
 
+    #[allow(dead_code)]
     fn reset_configs_global(&mut self) {
         use avro_schema_registry::db::models::schema::configs::dsl::*;
 

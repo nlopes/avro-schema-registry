@@ -231,7 +231,7 @@ async fn test_get_version_of_schema_registered_under_subject_with_subject() {
         )
         .await;
 
-    let subject_regex = r#"\{"subject":"test.subject","id":\d+,"version":1,"schema":"\{\\n    \\"type\\": \\"record\\",\\n    \\"name\\": \\"test\\",\\n    \\"fields\\":\\n    \[\\n        \{\\n            \\"type\\": \\"string\\",\\n            \\"name\\": \\"field1\\",\\n            \\"default\\": \\"\\"\\n        \},\\n        \{\\n            \\"type\\": \\"string\\",\\n            \\"name\\": \\"field2\\"\\n        \}\\n    \]\\n\}\\n"\}"#;
+    let subject_regex = r#"\{"subject":"test.subject","id":\d+,"version":1,"schema":"\{    \\"type\\": \\"record\\",    \\"name\\": \\"test\\",    \\"fields\\":    \[        \{            \\"type\\": \\"string\\",            \\"name\\": \\"field1\\",            \\"default\\": \\"\\"        \},        \{            \\"type\\": \\"string\\",            \\"name\\": \\"field2\\"        \}    \]\}"\}"#;
     server
         .test(
             http::Method::GET,
