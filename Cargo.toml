@@ -26,7 +26,7 @@ doc = false
 actix = "0.13"
 actix-threadpool = "0.3"
 actix-web = "4"
-actix-web-prom = "0.8"
+actix-web-prom = "0.9"
 avro-rs = { git = "https://github.com/apache/avro", package = "apache-avro", version = "0.18" }
 base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
